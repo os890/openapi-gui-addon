@@ -86,34 +86,33 @@ No code changes needed — just configure via properties.
 
 **Runtime (JVM system property):**
 ```bash
-# Enable UI
-java -Dproject.stage=development -jar ...
+# Enable UI (WildFly)
+standalone.sh -Dproject.stage=development
 
 # Disable UI (default when no config is set)
-java -jar ...
+standalone.sh
 ```
 
-**Build-time (Maven profile with resource filtering):**
-```xml
-<properties>
-    <openapi.ui.enabled>false</openapi.ui.enabled>
-</properties>
+**Build-time (Maven profile — addon only in non-production builds):**
 
+The most secure approach: don't ship the addon JAR at all in production.
+
+```xml
 <profiles>
     <profile>
         <id>development</id>
-        <properties>
-            <openapi.ui.enabled>true</openapi.ui.enabled>
-        </properties>
+        <dependencies>
+            <dependency>
+                <groupId>org.os890.mp-ext</groupId>
+                <artifactId>openapi-gui-addon</artifactId>
+                <version>1.11.0</version>
+            </dependency>
+        </dependencies>
     </profile>
 </profiles>
 ```
 
-```properties
-openapi.ui.enabled=${openapi.ui.enabled}
-```
-
-Build with `mvn clean package -Pdevelopment` to enable the UI.
+Build with `mvn clean package -Pdevelopment` to include the UI. Default build has no UI code.
 
 **Always enabled:**
 ```properties

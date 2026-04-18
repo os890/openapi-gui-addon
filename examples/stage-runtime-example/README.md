@@ -1,6 +1,6 @@
 # Stage Runtime Example
 
-Demonstrates enabling/disabling the OpenAPI UI based on a **runtime** MicroProfile Config property.
+Demonstrates enabling/disabling the OpenAPI UI based on a **runtime** system property.
 
 ## Dependency
 
@@ -14,27 +14,11 @@ Demonstrates enabling/disabling the OpenAPI UI based on a **runtime** MicroProfi
 
 ## How it works
 
-`DemoApplication.getClasses()` reads `project.stage` via `ConfigProvider.getConfig()` at startup.
-If no value is set, it defaults to `production` (UI disabled). The UI is only enabled
-when `project.stage` is explicitly set to a non-production value (e.g. `development`).
-
-```java
-import org.os890.mp.openapi.gui.OpenApiUiService;
-import org.os890.mp.openapi.gui.StaticResourcesService;
-
-String stage = ConfigProvider.getConfig()
-        .getOptionalValue("project.stage", String.class)
-        .orElse("production");
-
-if (!"production".equals(stage)) {
-    classes.add(OpenApiUiService.class);
-    classes.add(StaticResourcesService.class);
-}
-```
+The addon includes a `@PreMatching` JAX-RS filter that checks the `project.stage` config property at startup. If set to `production` (or not set at all), the UI is disabled. No application code needed.
 
 ## Configuration
 
-To enable the UI at runtime, pass `-Dproject.stage=development` as a JVM system property.
+To enable the UI at runtime, pass `-Dproject.stage=development` to WildFly.
 
 Without any configuration, the UI is disabled (production default).
 
@@ -44,15 +28,12 @@ Without any configuration, the UI is disabled (production default).
 # Build the WAR
 mvn clean package
 
-# Build and run all examples via Podman (from the examples/ directory)
-podman build -t openapi-gui-examples .
-podman run --rm -p 8080:8080 openapi-gui-examples
+# Run via Podman with UI disabled (default)
+podman build -t openapi-demos .
+podman run --rm -p 8080:8080 openapi-demos
 
-# To enable the UI, pass the system property to WildFly
-podman run --rm -p 8080:8080 openapi-gui-examples \
-    /opt/jboss/wildfly/bin/standalone.sh -b 0.0.0.0 \
-    -c standalone-microprofile.xml \
-    -Dproject.stage=development
+# Run via Podman with UI enabled
+podman run --rm -p 8080:8080 -e PROJECT_STAGE=development openapi-demos
 ```
 
 Alternatively, use the interactive launcher from the `examples/` directory:

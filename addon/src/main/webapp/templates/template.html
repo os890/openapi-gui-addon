@@ -63,17 +63,63 @@
                         }
                     }));
 
-                    swaggerConfig.urls = available.length > 0 ? available : defined_apis;
+                    var byName = function (a, b) {
+                        return (a.name || '').localeCompare(b.name || '');
+                    };
+
+                    var toPath = function (url) {
+                        if (!url) return '';
+                        try {
+                            return new URL(url, window.location.origin).pathname;
+                        } catch (e) {
+                            return url;
+                        }
+                    };
+
+                    // Longest-match wins so nested contexts like /a/b/openapi beat /a/openapi
+                    var currentPath = window.location.pathname;
+                    var current = null;
+                    var currentMatchLen = -1;
+                    available.forEach(function (api) {
+                        var apiPath = toPath(api.url);
+                        if (apiPath && currentPath.startsWith(apiPath + '-ui') && apiPath.length > currentMatchLen) {
+                            current = api;
+                            currentMatchLen = apiPath.length;
+                        }
+                    });
+
+                    var others = available.filter(function (api) { return api !== current; }).sort(byName);
+                    unavailable.sort(byName);
+
+                    var ordered = current ? [current].concat(others) : others;
+
+                    swaggerConfig.urls = ordered.length > 0 ? ordered : defined_apis;
+                    if (current) {
+                        swaggerConfig['urls.primaryName'] = current.name;
+                    }
                     window.ui = SwaggerUIBundle(swaggerConfig);
 
-                    if (unavailable.length > 0) {
+                    if ((current && others.length > 0) || unavailable.length > 0) {
                         setTimeout(function () {
                             var select = document.querySelector('.swagger-ui .topbar select');
-                            if (select) {
-                                var sep = document.createElement('option');
-                                sep.disabled = true;
-                                sep.textContent = '\u2500\u2500 Unavailable \u2500\u2500';
-                                select.appendChild(sep);
+                            if (!select) return;
+
+                            if (current && others.length > 0) {
+                                var sepOther = document.createElement('option');
+                                sepOther.disabled = true;
+                                sepOther.textContent = '\u2500\u2500 Other available \u2500\u2500';
+                                if (select.options.length > 1) {
+                                    select.insertBefore(sepOther, select.options[1]);
+                                } else {
+                                    select.appendChild(sepOther);
+                                }
+                            }
+
+                            if (unavailable.length > 0) {
+                                var sepUnavail = document.createElement('option');
+                                sepUnavail.disabled = true;
+                                sepUnavail.textContent = '\u2500\u2500 Unavailable \u2500\u2500';
+                                select.appendChild(sepUnavail);
 
                                 unavailable.forEach(function (api) {
                                     var opt = document.createElement('option');
