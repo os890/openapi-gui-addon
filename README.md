@@ -1,11 +1,11 @@
 # OpenAPI GUI Addon
 
-A self-contained OpenAPI UI addon for Jakarta EE 8 / MicroProfile applications.
+A self-contained OpenAPI UI addon for Jakarta EE 11 / MicroProfile applications.
 Built on top of [microprofile-extensions/openapi-ext](https://github.com/microprofile-extensions/openapi-ext) with added multi-API dropdown support and availability checking.
 
 ## Features
 
-- Swagger UI 4.15.5 bundled (no external requests, fully self-contained)
+- Swagger UI 5.18.2 bundled (no external requests, fully self-contained)
 - Multi-API dropdown: configure multiple OpenAPI endpoints, switch between them in the UI
 - Availability check: unreachable APIs are shown as disabled in the dropdown (checked on every page refresh)
 - Configurable via MicroProfile Config
@@ -17,7 +17,7 @@ Built on top of [microprofile-extensions/openapi-ext](https://github.com/micropr
 <dependency>
     <groupId>org.os890.mp-ext</groupId>
     <artifactId>openapi-gui-addon</artifactId>
-    <version>1.8.0</version>
+    <version>1.11.0</version>
 </dependency>
 ```
 
@@ -25,23 +25,11 @@ Built on top of [microprofile-extensions/openapi-ext](https://github.com/micropr
 
 ### Basic Setup
 
-Register the UI classes in your JAX-RS Application:
+Just add the dependency — the addon auto-discovers via JAX-RS. No code needed beyond your REST resources and a minimal `Application` class:
 
 ```java
-import org.os890.mp.openapi.gui.OpenApiUiService;
-import org.os890.mp.openapi.gui.StaticResourcesService;
-
 @ApplicationPath("/")
 public class MyApplication extends Application {
-
-    @Override
-    public Set<Class<?>> getClasses() {
-        Set<Class<?>> classes = new HashSet<>();
-        classes.add(MyResource.class);
-        classes.add(OpenApiUiService.class);
-        classes.add(StaticResourcesService.class);
-        return classes;
-    }
 }
 ```
 
@@ -89,32 +77,23 @@ On every page refresh, each configured URL is checked via a HEAD request:
 
 ### Project-Stage Gating
 
-The addon has no `web-fragment.xml`, so the UI is only active when explicitly registered in `getClasses()`.
-This enables conditional registration based on project stage.
+The addon includes a `@PreMatching` JAX-RS filter that controls UI access based on two config properties:
 
-**Runtime config check:**
+- `openapi.ui.enabled` — explicit override (`true`/`false`). When set, takes precedence.
+- `project.stage` — if set to `production` and `openapi.ui.enabled` is not set, the UI is disabled.
 
-```java
-@Override
-public Set<Class<?>> getClasses() {
-    Set<Class<?>> classes = new HashSet<>();
-    classes.add(MyResource.class);
+No code changes needed — just configure via properties.
 
-    String stage = ConfigProvider.getConfig()
-            .getOptionalValue("project.stage", String.class)
-            .orElse("production");
+**Runtime (JVM system property):**
+```bash
+# Enable UI
+java -Dproject.stage=development -jar ...
 
-    if (!"production".equals(stage)) {
-        classes.add(OpenApiUiService.class);
-        classes.add(StaticResourcesService.class);
-    }
-    return classes;
-}
+# Disable UI (default when no config is set)
+java -jar ...
 ```
 
-**Build-time Maven profile:**
-
-In `pom.xml`:
+**Build-time (Maven profile with resource filtering):**
 ```xml
 <properties>
     <openapi.ui.enabled>false</openapi.ui.enabled>
@@ -130,23 +109,16 @@ In `pom.xml`:
 </profiles>
 ```
 
-In `microprofile-config.properties` (with Maven resource filtering enabled):
 ```properties
 openapi.ui.enabled=${openapi.ui.enabled}
 ```
 
-In `DemoApplication.java`:
-```java
-if (Boolean.parseBoolean(
-        ConfigProvider.getConfig()
-                .getOptionalValue("openapi.ui.enabled", String.class)
-                .orElse("false"))) {
-    classes.add(OpenApiUiService.class);
-    classes.add(StaticResourcesService.class);
-}
-```
-
 Build with `mvn clean package -Pdevelopment` to enable the UI.
+
+**Always enabled:**
+```properties
+openapi.ui.enabled=true
+```
 
 ## Project Structure
 
@@ -156,9 +128,10 @@ openapi-gui-addon/
 └── examples/       Three demo apps showing different project-stage approaches
     ├── openapi-config/             Shared openapi.ui.urls config
     ├── stage-runtime-example/      UI gated by runtime config (project.stage)
-    ├── stage-buildtime-example/    UI gated by Maven profile (-Pproduction)
+    ├── stage-buildtime-example/    UI gated by Maven profile (-Pdevelopment)
     ├── stage-none-example/         UI always enabled
-    └── Dockerfile                  Deploys all three on WildFly 25
+    ├── build_and_start.sh          Interactive launcher for all demos
+    └── Dockerfile                  Deploys all three on WildFly 39
 ```
 
 ## White-Labeling

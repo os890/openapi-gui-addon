@@ -8,7 +8,7 @@ Demonstrates enabling/disabling the OpenAPI UI based on a **Maven profile** at b
 <dependency>
     <groupId>org.os890.mp-ext</groupId>
     <artifactId>openapi-gui-addon</artifactId>
-    <version>1.8.0</version>
+    <version>1.11.0</version>
 </dependency>
 ```
 
@@ -50,14 +50,23 @@ if (Boolean.parseBoolean(
 </profiles>
 ```
 
-## Build
+## Build and Deploy with WildFly 39
 
 ```bash
-# Default (UI disabled)
+# Default build (UI disabled)
 mvn clean package
 
-# Development (UI enabled)
+# Development build (UI enabled)
 mvn clean package -Pdevelopment
+
+# Build and run all examples via Podman (from the examples/ directory)
+podman build -t openapi-gui-examples .
+podman run --rm -p 8080:8080 openapi-gui-examples
+```
+
+Alternatively, use the interactive launcher from the `examples/` directory:
+```bash
+./build_and_start.sh
 ```
 
 ## Endpoints

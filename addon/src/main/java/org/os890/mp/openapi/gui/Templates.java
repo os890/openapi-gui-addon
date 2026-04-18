@@ -18,9 +18,9 @@ package org.os890.mp.openapi.gui;
 // Changes: added openapi.ui.urls multi-API dropdown with availability check,
 //          auto-visible explore form when urls configured, removed Lombok
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

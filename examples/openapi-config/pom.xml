@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.os890.mp-ext.examples</groupId>
         <artifactId>openapi-gui-examples</artifactId>
-        <version>1.8.0</version>
+        <version>1.11.0</version>
     </parent>
 
     <groupId>org.os890.mp-ext.examples</groupId>

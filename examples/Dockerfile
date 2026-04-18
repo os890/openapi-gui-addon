@@ -10,9 +10,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 
-ENV WILDFLY_VERSION=25.0.1.Final \
+ENV WILDFLY_VERSION=39.0.1.Final \
     JBOSS_HOME=/opt/jboss/wildfly
 
 RUN groupadd -r jboss && useradd -r -g jboss -d /opt/jboss jboss \
@@ -28,6 +28,8 @@ COPY stage-runtime-example/target/app1.war $JBOSS_HOME/standalone/deployments/
 COPY stage-buildtime-example/target/app2.war $JBOSS_HOME/standalone/deployments/
 COPY stage-none-example/target/app3.war $JBOSS_HOME/standalone/deployments/
 
+ENV PROJECT_STAGE=production
+
 USER jboss
 EXPOSE 8080
-CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-c", "standalone-microprofile.xml"]
+CMD /opt/jboss/wildfly/bin/standalone.sh -b 0.0.0.0 -c standalone-microprofile.xml -Dproject.stage=$PROJECT_STAGE

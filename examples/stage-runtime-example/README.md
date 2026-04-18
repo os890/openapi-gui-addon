@@ -8,7 +8,7 @@ Demonstrates enabling/disabling the OpenAPI UI based on a **runtime** MicroProfi
 <dependency>
     <groupId>org.os890.mp-ext</groupId>
     <artifactId>openapi-gui-addon</artifactId>
-    <version>1.8.0</version>
+    <version>1.11.0</version>
 </dependency>
 ```
 
@@ -37,6 +37,28 @@ if (!"production".equals(stage)) {
 To enable the UI at runtime, pass `-Dproject.stage=development` as a JVM system property.
 
 Without any configuration, the UI is disabled (production default).
+
+## Build and Deploy with WildFly 39
+
+```bash
+# Build the WAR
+mvn clean package
+
+# Build and run all examples via Podman (from the examples/ directory)
+podman build -t openapi-gui-examples .
+podman run --rm -p 8080:8080 openapi-gui-examples
+
+# To enable the UI, pass the system property to WildFly
+podman run --rm -p 8080:8080 openapi-gui-examples \
+    /opt/jboss/wildfly/bin/standalone.sh -b 0.0.0.0 \
+    -c standalone-microprofile.xml \
+    -Dproject.stage=development
+```
+
+Alternatively, use the interactive launcher from the `examples/` directory:
+```bash
+./build_and_start.sh
+```
 
 ## Endpoints
 

@@ -20,36 +20,35 @@
     <parent>
         <groupId>org.os890.mp-ext.examples</groupId>
         <artifactId>openapi-gui-examples</artifactId>
-        <version>1.8.0</version>
+        <version>1.11.0</version>
     </parent>
 
-    <groupId>org.os890.mp-ext.examples</groupId>
     <artifactId>stage-none-example</artifactId>
     <packaging>war</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.geronimo.specs</groupId>
-            <artifactId>geronimo-jaxrs_2.1_spec</artifactId>
-            <version>1.1</version>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>4.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-api</artifactId>
-            <version>2.0.1</version>
+            <version>4.0.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
-            <version>2.0</version>
+            <version>3.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.os890.mp-ext</groupId>
             <artifactId>openapi-gui-addon</artifactId>
-            <version>1.8.0</version>
+            <version>1.11.0</version>
         </dependency>
         <dependency>
             <groupId>org.os890.mp-ext.examples</groupId>

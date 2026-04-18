@@ -15,32 +15,12 @@ package org.os890.mp.openapi.gui.example;
 
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
 import org.eclipse.microprofile.openapi.annotations.info.Info;
-import org.os890.mp.openapi.gui.OpenApiUiService;
-import org.os890.mp.openapi.gui.StaticResourcesService;
 
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
-import java.util.HashSet;
-import java.util.Set;
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 
 @ApplicationPath("/")
 @OpenAPIDefinition(info = @Info(title = "Hello API", version = "1.0",
-        description = "Programmatic project-stage: OpenAPI UI enabled unless project.stage=production"))
+        description = "Runtime project-stage: OpenAPI UI disabled when project.stage=production"))
 public class DemoApplication extends Application {
-
-    @Override
-    public Set<Class<?>> getClasses() {
-        Set<Class<?>> classes = new HashSet<>();
-        classes.add(HelloResource.class);
-
-        String stage = org.eclipse.microprofile.config.ConfigProvider.getConfig()
-                .getOptionalValue("project.stage", String.class)
-                .orElse("production");
-
-        if (!"production".equals(stage)) {
-            classes.add(OpenApiUiService.class);
-            classes.add(StaticResourcesService.class);
-        }
-        return classes;
-    }
 }

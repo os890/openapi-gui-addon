@@ -15,25 +15,12 @@ package org.os890.mp.openapi.gui.example;
 
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
 import org.eclipse.microprofile.openapi.annotations.info.Info;
-import org.os890.mp.openapi.gui.OpenApiUiService;
-import org.os890.mp.openapi.gui.StaticResourcesService;
 
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
-import java.util.HashSet;
-import java.util.Set;
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 
 @ApplicationPath("/")
 @OpenAPIDefinition(info = @Info(title = "Info API", version = "1.0",
         description = "Always enabled: OpenAPI UI is always available"))
 public class DemoApplication extends Application {
-
-    @Override
-    public Set<Class<?>> getClasses() {
-        Set<Class<?>> classes = new HashSet<>();
-        classes.add(InfoResource.class);
-        classes.add(OpenApiUiService.class);
-        classes.add(StaticResourcesService.class);
-        return classes;
-    }
 }
