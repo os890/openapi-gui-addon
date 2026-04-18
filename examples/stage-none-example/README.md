@@ -14,14 +14,10 @@ Demonstrates the simplest setup -- the OpenAPI UI is **always enabled** with no 
 
 ## How it works
 
-`DemoApplication.getClasses()` unconditionally registers the UI classes:
+The addon auto-discovers via JAX-RS. To keep the UI always enabled regardless of `project.stage`, set `openapi.ui.enabled=true` in `microprofile-config.properties`:
 
-```java
-import org.os890.mp.openapi.gui.OpenApiUiService;
-import org.os890.mp.openapi.gui.StaticResourcesService;
-
-classes.add(OpenApiUiService.class);
-classes.add(StaticResourcesService.class);
+```properties
+openapi.ui.enabled=true
 ```
 
 ## Build and Deploy with WildFly 39
@@ -30,9 +26,9 @@ classes.add(StaticResourcesService.class);
 # Build the WAR
 mvn clean package
 
-# Build and run all examples via Podman (from the examples/ directory)
-podman build -t openapi-gui-examples .
-podman run --rm -p 8080:8080 openapi-gui-examples
+# Run via Podman
+podman build -t openapi-demos .
+podman run --rm -p 8080:8080 openapi-demos
 ```
 
 Alternatively, use the interactive launcher from the `examples/` directory:

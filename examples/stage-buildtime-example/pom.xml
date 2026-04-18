@@ -26,10 +26,6 @@
     <artifactId>stage-buildtime-example</artifactId>
     <packaging>war</packaging>
 
-    <properties>
-        <openapi.ui.enabled>false</openapi.ui.enabled>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
@@ -49,35 +45,28 @@
             <version>3.1</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.os890.mp-ext</groupId>
-            <artifactId>openapi-gui-addon</artifactId>
-            <version>1.11.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.os890.mp-ext.examples</groupId>
-            <artifactId>openapi-gui-config</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
     <profiles>
         <profile>
             <id>development</id>
-            <properties>
-                <openapi.ui.enabled>true</openapi.ui.enabled>
-            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.os890.mp-ext</groupId>
+                    <artifactId>openapi-gui-addon</artifactId>
+                    <version>1.11.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.os890.mp-ext.examples</groupId>
+                    <artifactId>openapi-gui-config</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 
     <build>
         <finalName>app2</finalName>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
