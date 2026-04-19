@@ -4,8 +4,11 @@ Demonstrates two things at once:
 
 1. Enabling/disabling the OpenAPI UI based on a **runtime** system property
    (`project.stage`).
-2. **Protecting the REST endpoint with Keycloak OAuth2** while keeping the
-   OpenAPI UI ("Try it out" included) fully functional. See
+2. **Protecting the whole WAR with Keycloak OIDC via server-side session
+   cookies.** The initial request redirects to Keycloak, the user logs in,
+   and every subsequent request (including Swagger UI's "Try it out"
+   calls) is authenticated via the session cookie. No OAuth2 popup in
+   Swagger UI — bypasses browser COOP restrictions entirely. See
    [../OAUTH2.md](../OAUTH2.md) for the full story and the
    `build_and_start_oauth2.sh` launcher.
 
@@ -48,12 +51,13 @@ Alternatively, use the interactive launcher from the `examples/` directory:
 ./build_and_start.sh
 ```
 
-## Endpoints
+## Endpoints (all protected by the WAR-wide security-constraint)
 
-- REST: `http://localhost:8080/hello-api/hello` — protected by Keycloak (Bearer token required)
-- OpenAPI UI: `http://localhost:8080/hello-api/openapi-ui/` (open; only when `project.stage != production`)
-- OpenAPI document: `http://localhost:8080/hello-api/openapi` (open)
+- REST: `http://localhost:8080/hello-api/hello`
+- OpenAPI UI: `http://localhost:8080/hello-api/openapi-ui/`
+- OpenAPI document: `http://localhost:8080/hello-api/openapi`
 
-To hit the protected REST endpoint from the UI, launch the full demo
-(WildFly + Keycloak) via `../build_and_start_oauth2.sh`, click **Authorize**
-in the UI, log in as `demo`/`demo`, then **Try it out**.
+Launch the demo via `../build_and_start_oauth2.sh`. First visit redirects
+to Keycloak; log in as `demo`/`demo`; Swagger UI then loads and
+**Try it out** works without any additional Authorize step — the browser
+carries the session cookie automatically.

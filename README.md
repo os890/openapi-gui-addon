@@ -136,24 +136,31 @@ openapi-gui-addon/
     └── Dockerfile.oauth2           WildFly image with elytron-oidc-client
 ```
 
-## OAuth2 / Keycloak
+## OAuth2 / Keycloak — session cookie variant
 
-The Hello API demo can also run behind Keycloak. See
-[examples/OAUTH2.md](examples/OAUTH2.md) for the exact changes needed on
-the REST side. The addon itself is not modified — it uses Swagger UI's
-built-in OAuth2 flow via the pre-existing `openapi.ui.oauth2RedirectUri`
-config. Minimal config:
+The Hello API demo on this branch runs behind Keycloak **without using
+Swagger UI's OAuth2 popup flow**. Authentication is handled server-side
+by WildFly Elytron OIDC; Swagger UI's "Try it out" rides on the session
+cookie established during the first OIDC redirect.
 
-```properties
-# MUST be an absolute URL (scheme + host + port) — IdPs reject bare paths.
-# The path part points at the oauth2-redirect.html that the addon ships
-# inside the swagger-ui webjar.
-openapi.ui.oauth2RedirectUri=http://localhost:8080/my-app/webjars/swagger-ui/5.18.2/oauth2-redirect.html
-```
+Reason: the popup flow is broken by Keycloak's default
+`Cross-Origin-Opener-Policy: same-origin` header, which severs
+`window.opener` and makes `oauth2-redirect.html` throw. If you don't
+control the Keycloak instance, session-cookie mode is the only
+reliable path.
 
-The client ID, scopes, and PKCE toggle are entered by the user in Swagger
-UI's Authorize dialog at runtime. For a one-click authorize (prefilled
-form), see the `oauth2-support_simple_prefilled` branch.
+See [examples/OAUTH2.md](examples/OAUTH2.md) for the full rationale, the
+exact differences versus the popup variant, and when to use each approach.
+
+Minimal setup:
+- `WEB-INF/oidc.json` without `bearer-only` — Elytron runs the full OIDC code flow.
+- `web.xml` protects `/*` — the entire WAR; the first visit triggers login.
+- No OpenAPI security scheme declared — Swagger UI shows no Authorize button.
+
+Related branches:
+- `oauth2-support_simple` — OAuth2 popup flow with manual client_id entry.
+- `oauth2-support_simple_prefilled` — same plus `initOAuth()` prefill.
+- `oauth2-rolesallowed` — auto-derives `SecurityRequirement` from `@RolesAllowed` / `@PermitAll` / `@DenyAll`.
 
 ## White-Labeling
 
