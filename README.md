@@ -129,9 +129,31 @@ openapi-gui-addon/
     ├── stage-runtime-example/      UI gated by runtime config (project.stage)
     ├── stage-buildtime-example/    UI gated by Maven profile (-Pdevelopment)
     ├── stage-none-example/         UI always enabled
+    ├── keycloak/realm-demo.json    OAuth2 demo realm (see examples/OAUTH2.md)
     ├── build_and_start.sh          Interactive launcher for all demos
-    └── Dockerfile                  Deploys all three on WildFly 39
+    ├── build_and_start_oauth2.sh   OAuth2 demo (WildFly + Keycloak pod)
+    ├── Dockerfile                  Deploys all three on WildFly 39
+    └── Dockerfile.oauth2           WildFly image with elytron-oidc-client
 ```
+
+## OAuth2 / Keycloak
+
+The Hello API demo can also run behind Keycloak. See
+[examples/OAUTH2.md](examples/OAUTH2.md) for the exact changes needed on
+the REST side. The addon itself is not modified — it uses Swagger UI's
+built-in OAuth2 flow via the pre-existing `openapi.ui.oauth2RedirectUri`
+config. Minimal config:
+
+```properties
+# MUST be an absolute URL (scheme + host + port) — IdPs reject bare paths.
+# The path part points at the oauth2-redirect.html that the addon ships
+# inside the swagger-ui webjar.
+openapi.ui.oauth2RedirectUri=http://localhost:8080/my-app/webjars/swagger-ui/5.18.2/oauth2-redirect.html
+```
+
+The client ID, scopes, and PKCE toggle are entered by the user in Swagger
+UI's Authorize dialog at runtime. For a one-click authorize (prefilled
+form), see the `oauth2-support_simple_prefilled` branch.
 
 ## White-Labeling
 

@@ -21,6 +21,9 @@ import jakarta.ws.rs.core.Application;
 
 @ApplicationPath("/")
 @OpenAPIDefinition(info = @Info(title = "Hello API", version = "1.0",
-        description = "Runtime project-stage: OpenAPI UI disabled when project.stage=production"))
+        description = "Runtime project-stage demo, protected by Keycloak OAuth2. "
+                + "The OAuth2 security scheme is injected at runtime by OAuth2SecurityFilter "
+                + "so the authorization/token URLs come from microprofile-config.properties "
+                + "rather than being hardcoded in annotations."))
 public class DemoApplication extends Application {
 }

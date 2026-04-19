@@ -17,21 +17,28 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.SecurityContext;
 
 @Path("/hello")
+@SecurityRequirement(name = "keycloak")
 public class HelloResource {
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    @Operation(summary = "Say hello", description = "Returns a hello greeting")
+    @Operation(summary = "Say hello", description = "Returns a hello greeting for the authenticated caller")
     @APIResponse(responseCode = "200", description = "Hello greeting",
             content = @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = String.class)))
-    public String hello() {
-        return "Hello from the Hello API!";
+    public String hello(@Context SecurityContext securityContext) {
+        String caller = securityContext.getUserPrincipal() != null
+                ? securityContext.getUserPrincipal().getName()
+                : "anonymous";
+        return "Hello " + caller + " from the Hello API!";
     }
 }
