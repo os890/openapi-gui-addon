@@ -50,10 +50,12 @@ Alternatively, use the interactive launcher from the `examples/` directory:
 
 ## Endpoints
 
-- REST: `http://localhost:8080/hello-api/hello` — protected by Keycloak (Bearer token required)
 - OpenAPI UI: `http://localhost:8080/hello-api/openapi-ui/` (open; only when `project.stage != production`)
 - OpenAPI document: `http://localhost:8080/hello-api/openapi` (open)
+- `GET /hello` — inherits class-level `@RolesAllowed("user")` → padlock + Bearer token required.
+- `GET /hello/ping` — `@PermitAll` overrides class level → no padlock in the doc; still auth'd at the HTTP layer by `web.xml`.
+- `GET /hello/admin` — `@RolesAllowed("admin")` → padlock; demo user lacks the role, so calls return **403**.
 
-To hit the protected REST endpoint from the UI, launch the full demo
-(WildFly + Keycloak) via `../build_and_start_oauth2.sh`, click **Authorize**
-in the UI, log in as `demo`/`demo`, then **Try it out**.
+Launch via `../build_and_start_oauth2.sh`, click **Authorize** in the
+Swagger UI, enter `openapi-ui` as client_id + tick `openid`, log in as
+`demo`/`demo`, then **Try it out** on each endpoint.

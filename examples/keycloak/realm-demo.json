@@ -3,6 +3,14 @@
   "enabled": true,
   "sslRequired": "none",
   "accessTokenLifespan": 1800,
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Basic authenticated user"
+      }
+    ]
+  },
   "clients": [
     {
       "clientId": "openapi-ui",
@@ -41,7 +49,8 @@
         }
       ],
       "realmRoles": [
-        "default-roles-demo"
+        "default-roles-demo",
+        "user"
       ]
     }
   ]

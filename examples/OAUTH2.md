@@ -1,9 +1,11 @@
-# OAuth2 / Keycloak Demo
+# OAuth2 / Keycloak Demo (auto-derive from `@RolesAllowed`)
 
 Shows how to keep the OpenAPI UI addon working when the underlying REST API
-is protected by OAuth2. The goal: clicking **Authorize** in the UI, logging
-in at Keycloak, and then using **Try it out** on any endpoint must result in
-a successful authenticated call — not a 401.
+is protected by Keycloak, **without writing any OpenAPI security
+annotations on REST classes**. A small `OASFilter` classpath-scans the
+JAX-RS resources and maps Jakarta Security annotations
+(`@RolesAllowed`, `@PermitAll`, `@DenyAll`) onto per-operation
+`SecurityRequirement`s in the generated OpenAPI document.
 
 The demo protects the **Hello API** (`stage-runtime-example`) with Keycloak.
 The other two demos stay open so you can compare.
@@ -14,63 +16,90 @@ The other two demos stay open so you can compare.
 examples/build_and_start_oauth2.sh
 ```
 
-This builds the addon + WAR, starts a Podman pod with **WildFly** (port 8080)
-and **Keycloak** (port 8081), imports the `demo` realm and creates a test
-user `demo` / `demo`.
+Starts a Podman pod with **WildFly** (port 8080) and **Keycloak** (port
+8081), imports the `demo` realm and creates a test user `demo` / `demo`
+(assigned the realm role `user`).
 
 Then open <http://localhost:8080/hello-api/openapi-ui/>, click **Authorize**,
 type `openapi-ui` as *client_id*, tick the `openid` scope, click
-**Authorize**, log in as `demo` / `demo`, and run `GET /hello` via
-**Try it out**.
+**Authorize**, log in as `demo` / `demo`, and exercise the three demo
+endpoints below.
 
-## What needed to change
+## The three demo endpoints — and what the filter does with each
 
-**The addon itself needed no changes.** The base plugin already exposes
-`openapi.ui.oauth2RedirectUri` and passes it to Swagger UI, and Swagger UI
-renders an **Authorize** button automatically as soon as the OpenAPI
-document declares an OAuth2 security scheme. Everything below is either on
-the REST app side (where auth lives) or in supporting config.
-
-### 1. OpenAPI document — declare the security scheme
-
-Without this, Swagger UI shows no Authorize button and has no idea where to
-send users. See [`DemoApplication.java`](stage-runtime-example/src/main/java/org/os890/mp/openapi/gui/example/DemoApplication.java):
-
-```java
-@OpenAPIDefinition(
-    components = @Components(
-        securitySchemes = @SecurityScheme(
-            securitySchemeName = "keycloak",
-            type = SecuritySchemeType.OAUTH2,
-            flows = @OAuthFlows(
-                authorizationCode = @OAuthFlow(
-                    authorizationUrl = "http://localhost:8081/realms/demo/protocol/openid-connect/auth",
-                    tokenUrl         = "http://localhost:8081/realms/demo/protocol/openid-connect/token",
-                    scopes = @OAuthScope(name = "openid", description = "OIDC ID token")
-                )
-            )
-        )
-    )
-)
-```
-
-And per-endpoint:
+`HelloResource` is plain Jakarta, no `@SecurityRequirement` anywhere:
 
 ```java
 @Path("/hello")
-@SecurityRequirement(name = "keycloak")
-public class HelloResource { ... }
+@RolesAllowed("user")                   // class-level default
+public class HelloResource {
+
+    @GET
+    public String hello(...) { ... }    // inherits @RolesAllowed("user")
+
+    @GET @Path("/ping")
+    @PermitAll                          // overrides class level
+    public String ping() { ... }
+
+    @GET @Path("/admin")
+    @RolesAllowed("admin")              // method-level override
+    public String admin(...) { ... }
+}
 ```
+
+What the filter produces in the OpenAPI doc:
+
+| Endpoint | Effective Jakarta access | OpenAPI `security` field | Swagger UI | Runtime |
+| --- | --- | --- | --- | --- |
+| `GET /hello` | inherited `@RolesAllowed("user")` | `[{ "keycloak": [] }]` | 🔒 padlock | 200 OK for `demo` (has `user` role) |
+| `GET /hello/ping` | method `@PermitAll` wins | *(absent)* | no padlock | 200 OK; the web.xml constraint still requires authentication at the HTTP layer |
+| `GET /hello/admin` | method `@RolesAllowed("admin")` wins | `[{ "keycloak": [] }]` | 🔒 padlock | **403 Forbidden** — `demo` user lacks `admin` |
+
+The OpenAPI doc only encodes *"this endpoint requires auth"*; it cannot
+say *"this endpoint requires role X"*. Role-specific enforcement happens
+at runtime via Jakarta Security (Elytron OIDC validates the Bearer
+token's `realm_access.roles`). The `admin` endpoint is the proof that
+token-present-but-wrong-role cleanly returns 403.
+
+## How the auto-derivation works
+
+At deployment time `OAuth2SecurityFilter#filterOpenAPI(OpenAPI)`:
+
+1. **Classpath-scans its own package** (`org.os890.mp.openapi.gui.example`)
+   for every `.class` file via the WAR's ClassLoader. Supports `file:`,
+   `jar:`, and WildFly VFS (`vfs:`) URL schemes — the VFS case uses
+   reflection so no WildFly compile-time dependency is needed.
+2. For each class annotated with JAX-RS `@Path`, iterates its declared
+   methods. For methods carrying a JAX-RS verb annotation (`@GET`,
+   `@POST`, …) it computes the **effective Jakarta access** using the
+   standard precedence rule: method-level annotation wins over
+   class-level, in the order `@DenyAll` → `@PermitAll` → `@RolesAllowed`.
+3. For every operation whose effective access is `@RolesAllowed`, attaches
+   a `SecurityRequirement` pointing at the scheme named `keycloak`.
+4. Separately, injects the `keycloak` `SecurityScheme` itself into
+   `components.securitySchemes`, populating the `authorizationUrl` and
+   `tokenUrl` from MicroProfile Config
+   (`app.oauth2.authorizationUrl`, `app.oauth2.tokenUrl`) — so Keycloak
+   URLs are not hardcoded in Java annotations and can be overridden per
+   stage via env vars or `-D` system properties.
+
+Why a classpath scan and not `CDI.current().getBeanManager()`: CDI isn't
+fully initialized when SmallRye OpenAPI runs filters during deployment.
+A classloader-based scan avoids that timing issue.
+
+## What needed to change versus an unprotected REST endpoint
+
+### 1. `OAuth2SecurityFilter` (the only Java class the pattern actually requires)
+
+See [`OAuth2SecurityFilter.java`](stage-runtime-example/src/main/java/org/os890/mp/openapi/gui/example/OAuth2SecurityFilter.java)
+— registered via `mp.openapi.filter` in `microprofile-config.properties`.
 
 ### 2. Enforce auth on the REST path — but NOT on the UI
 
-This is the subtle part. The addon UI lives inside the same WAR as the REST
-API, at `/openapi-ui/*` and `/webjars/*`, and the OpenAPI document at
-`/openapi`. If you drop a blanket `<security-constraint>` on `/*` you will
-lock the UI itself out and the whole flow collapses.
-
-[`WEB-INF/web.xml`](stage-runtime-example/src/main/webapp/WEB-INF/web.xml)
-constrains **only** `/hello/*`:
+The addon UI, its CSS, and the OpenAPI document must stay reachable
+without login. [`WEB-INF/web.xml`](stage-runtime-example/src/main/webapp/WEB-INF/web.xml)
+constrains only `/hello/*`; the addon's JAX-RS routes (`/openapi-ui/*`,
+`/webjars/*`) are deliberately excluded.
 
 ```xml
 <security-constraint>
@@ -82,72 +111,58 @@ constrains **only** `/hello/*`:
 <login-config><auth-method>OIDC</auth-method></login-config>
 ```
 
-Token validation is performed by the **WildFly Elytron OIDC client** via
-[`WEB-INF/oidc.json`](stage-runtime-example/src/main/webapp/WEB-INF/oidc.json).
-`bearer-only: true` tells WildFly to validate incoming Bearer tokens without
-initiating any browser redirect of its own — the UI handles the flow.
+Token validation is performed by the **WildFly Elytron OIDC client**
+via [`WEB-INF/oidc.json`](stage-runtime-example/src/main/webapp/WEB-INF/oidc.json).
+`bearer-only: true` tells WildFly to validate incoming Bearer tokens
+without initiating any browser redirect of its own — Swagger UI owns
+the login flow on the front channel.
 
 ### 3. Point Swagger UI at a valid redirect URL
 
-The base plugin's default for `openapi.ui.oauth2RedirectUri` is
-`/oauth2-redirect.html`, which (a) doesn't exist at the WAR context root
-and (b) is a bare path, which Keycloak rejects with *"Invalid parameter:
-redirect_uri"*. Fix both by pointing at the `oauth2-redirect.html` the
-addon already ships inside the swagger-ui webjar, as an **absolute URL**:
+Base-plugin default is `/oauth2-redirect.html`, which (a) doesn't exist
+at the WAR root and (b) is a bare path — Keycloak rejects bare paths
+with *"Invalid parameter: redirect_uri"*. Fix:
 
 ```properties
 openapi.ui.oauth2RedirectUri=http://localhost:8080/hello-api/webjars/swagger-ui/5.18.2/oauth2-redirect.html
 ```
 
-The exact same URL must appear in the Keycloak client's `redirectUris`
-list (see [`keycloak/realm-demo.json`](keycloak/realm-demo.json)).
+Must also appear in the Keycloak client's `redirectUris` list (see
+[`keycloak/realm-demo.json`](keycloak/realm-demo.json)).
 
 ## The redirect-URI gotcha
 
-Keycloak only accepts `redirect_uri` values that are **absolute URLs**
-(scheme + host + port + path). A bare path is rejected even when a
-matching path-only entry exists on the client. Swagger UI forwards
-`oauth2RedirectUrl` to Keycloak verbatim, so don't set it to a relative
-path — always use the full URL, and keep the same URL on the Keycloak
-client's list.
+Keycloak accepts only **absolute URLs** (scheme + host + port + path).
+A bare path is rejected even when the client has a path-only entry
+registered. Swagger UI forwards `oauth2RedirectUrl` verbatim.
 
 ## The issuer-URL gotcha
 
-This trips up nearly everyone: **Authorize** works, the user logs in, a
-token comes back, **Try it out** fires… and WildFly answers 401.
-
-The cause is almost always that the token's `iss` claim does not match the
-issuer URL WildFly uses when fetching Keycloak's JWKS. In a container
-setup, the browser typically reaches Keycloak on `http://localhost:8081`
-while the backend might reach it on `http://keycloak:8080` — same Keycloak,
-different URLs, different issuer strings.
-
-This demo sidesteps the problem by running both containers in a **single
-Podman pod**, so they share a network namespace:
-
-- Browser → `http://localhost:8081` (published port)
-- WildFly → `http://localhost:8081` (same-pod localhost)
-- Token `iss` → `http://localhost:8081/realms/demo` — matches on both sides.
-
-If you deploy outside a shared-namespace setup, set Keycloak's
-`KC_HOSTNAME` so the public URL matches what the backend sees, or configure
-the backend to resolve the public hostname. There is no way around this:
-the issuer claim in the token and the URL used to validate the token must
-be byte-for-byte identical.
+Classic trap: **Authorize** succeeds, user logs in, token comes back,
+**Try it out** fires… WildFly answers 401. Almost always an `iss` claim
+mismatch — the token's issuer URL must byte-match whatever URL WildFly
+uses to fetch JWKS. This demo sidesteps it by running both containers
+in a single **Podman pod** so the browser and WildFly share a network
+namespace and reach Keycloak on identical URLs.
 
 ## Files touched
 
 | File | Purpose |
 | --- | --- |
-| `stage-runtime-example/.../DemoApplication.java` | OpenAPI `@SecurityScheme` + Keycloak URLs. |
-| `stage-runtime-example/.../HelloResource.java` | `@SecurityRequirement` + authenticated principal. |
-| `stage-runtime-example/.../web.xml` | Security constraint on `/hello/*` only. |
-| `stage-runtime-example/.../oidc.json` | Elytron OIDC client config (`bearer-only`). |
-| `stage-runtime-example/.../microprofile-config.properties` | Absolute `openapi.ui.oauth2RedirectUri`. |
-| `keycloak/realm-demo.json` | Realm, `openapi-ui` public client, `demo` user. |
+| `stage-runtime-example/.../OAuth2SecurityFilter.java` | Classpath scan + OAS security-scheme injection + `@RolesAllowed/@PermitAll/@DenyAll` → `SecurityRequirement`. |
+| `stage-runtime-example/.../DemoApplication.java` | Plain `@OpenAPIDefinition.info` — no security scheme block. |
+| `stage-runtime-example/.../HelloResource.java` | Pure Jakarta Security annotations (`@RolesAllowed`, `@PermitAll`). |
+| `stage-runtime-example/.../web.xml` | Security-constraint on `/hello/*` only; OIDC login-config. |
+| `stage-runtime-example/.../oidc.json` | Elytron OIDC (`bearer-only`). |
+| `stage-runtime-example/.../microprofile-config.properties` | `mp.openapi.filter`, `app.oauth2.*` URLs, `openapi.ui.oauth2RedirectUri`. |
+| `keycloak/realm-demo.json` | Realm, `openapi-ui` public client, `demo` user assigned the `user` role. |
 | `Dockerfile.oauth2` + `enable-oidc.cli` | WildFly with `elytron-oidc-client` subsystem. |
 | `build_and_start_oauth2.sh` | Podman pod wiring. |
 
-The `addon/` directory is not touched — this demo uses only
-configuration and REST-side changes. For a one-click authorize (prefilled
-form), see the `oauth2-support_simple_prefilled` branch.
+The `addon/` directory is not touched.
+
+## Related branches
+
+- `oauth2-support_simple` — same popup flow but security scheme declared via annotation (`@SecurityRequirement`); no auto-derivation.
+- `oauth2-support_simple_prefilled` — same plus `initOAuth()` prefill so Authorize is one click.
+- `oauth2-support_simple-cookie` — replaces the popup flow entirely with a server-side OIDC session cookie; no OpenAPI security scheme at all. Useful when Keycloak's COOP headers break the popup flow and you can't change them.

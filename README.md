@@ -136,13 +136,22 @@ openapi-gui-addon/
     └── Dockerfile.oauth2           WildFly image with elytron-oidc-client
 ```
 
-## OAuth2 / Keycloak
+## OAuth2 / Keycloak — auto-derive security from `@RolesAllowed`
 
-The Hello API demo can also run behind Keycloak. See
-[examples/OAUTH2.md](examples/OAUTH2.md) for the exact changes needed on
-the REST side. The addon itself is not modified — it uses Swagger UI's
-built-in OAuth2 flow via the pre-existing `openapi.ui.oauth2RedirectUri`
-config. Minimal config:
+The Hello API demo runs behind Keycloak with the OpenAPI `SecurityRequirement`
+on each operation **auto-derived at runtime from plain Jakarta Security
+annotations** (`@RolesAllowed`, `@PermitAll`, `@DenyAll`) via a local
+`OASFilter`. REST resources therefore stay pure Jakarta — no
+`@SecurityRequirement` annotation is written anywhere, and Swagger UI
+still renders padlocks on the right operations and leaves `@PermitAll`
+ones open. Jakarta Security precedence (method-level wins over class-level)
+is respected.
+
+See [examples/OAUTH2.md](examples/OAUTH2.md) for the full story,
+including how the filter classpath-scans JAX-RS resources and maps them
+onto the OpenAPI model.
+
+Minimal addon config:
 
 ```properties
 # MUST be an absolute URL (scheme + host + port) — IdPs reject bare paths.
@@ -151,9 +160,10 @@ config. Minimal config:
 openapi.ui.oauth2RedirectUri=http://localhost:8080/my-app/webjars/swagger-ui/5.18.2/oauth2-redirect.html
 ```
 
-The client ID, scopes, and PKCE toggle are entered by the user in Swagger
-UI's Authorize dialog at runtime. For a one-click authorize (prefilled
-form), see the `oauth2-support_simple_prefilled` branch.
+Related branches:
+- `oauth2-support_simple` — OAuth2 popup flow with manual client_id entry; no auto-derivation.
+- `oauth2-support_simple_prefilled` — same plus `initOAuth()` prefill for one-click Authorize.
+- `oauth2-support_simple-cookie` — server-side OIDC session cookie instead of the popup flow (avoids Keycloak COOP issues).
 
 ## White-Labeling
 

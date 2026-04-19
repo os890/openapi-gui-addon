@@ -17,8 +17,9 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -27,7 +28,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 
 @Path("/hello")
-@SecurityRequirement(name = "keycloak")
+@RolesAllowed("user")   // default for all methods unless overridden
 public class HelloResource {
 
     @GET
@@ -40,5 +41,41 @@ public class HelloResource {
                 ? securityContext.getUserPrincipal().getName()
                 : "anonymous";
         return "Hello " + caller + " from the Hello API!";
+    }
+
+    /**
+     * Method-level {@code @PermitAll} overrides the class-level {@code @RolesAllowed}.
+     * The OAS filter must therefore NOT add a security requirement to this
+     * operation — it should appear without a padlock in Swagger UI, even
+     * though the URL is still under the web.xml security-constraint.
+     */
+    @GET
+    @Path("/ping")
+    @PermitAll
+    @Produces(MediaType.TEXT_PLAIN)
+    @Operation(summary = "Liveness ping", description = "Public probe — no Jakarta role required.")
+    @APIResponse(responseCode = "200", description = "pong",
+            content = @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = String.class)))
+    public String ping() {
+        return "pong";
+    }
+
+    /**
+     * Requires the {@code admin} role — which the demo user does not have.
+     * Any call made after logging in as {@code demo} should return HTTP 403
+     * (authenticated but not authorized). The OpenAPI doc only shows a
+     * padlock (auth required) — role specifics are enforced at runtime.
+     */
+    @GET
+    @Path("/admin")
+    @RolesAllowed("admin")
+    @Produces(MediaType.TEXT_PLAIN)
+    @Operation(summary = "Admin-only greeting",
+            description = "Requires the 'admin' Jakarta role — demo user lacks it, so this always 403s.")
+    @APIResponse(responseCode = "200", description = "Admin greeting",
+            content = @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = String.class)))
+    @APIResponse(responseCode = "403", description = "Caller lacks the 'admin' role")
+    public String admin(@Context SecurityContext securityContext) {
+        return "Hello admin " + securityContext.getUserPrincipal().getName() + "!";
     }
 }
