@@ -1,0 +1,175 @@
+<!--
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<!--
+  White-label template used by openapi-ui's Templates class via WhiteLabel.
+  Renders a tiny in-page username/password form; submitting it POSTs
+  grant_type=password to Keycloak's token endpoint, then hands the
+  resulting Bearer token to Swagger UI via preauthorizeApiKey.
+  No Swagger UI Authorize dialog, no popup, no redirect — everything
+  stays on this page.
+
+  Trade-off: because this is the "direct access grant" flow, the token
+  does NOT carry the auth_time / nonce claims that an interactive
+  authorization-code login produces. If your backend validator requires
+  those, use the same-tab-redirect OIDC flow instead.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>%title%</title>
+    <link rel="stylesheet" href="%contextRoot%/webjars/swagger-ui/5.18.2/swagger-ui.css"/>
+    <style>
+        body { margin: 0; font-family: sans-serif; }
+        #login {
+            max-width: 360px; margin: 60px auto; padding: 24px;
+            border: 1px solid #e1e4e8; border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,.05);
+        }
+        #login h2 { margin: 0 0 18px; font-size: 18px; }
+        #login label { display: block; font-size: 13px; margin: 10px 0 4px; color: #24292e; }
+        #login input { width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #d1d5da; border-radius: 4px; box-sizing: border-box; }
+        #login button { margin-top: 18px; width: 100%; padding: 10px; font-size: 14px; background: #2188ff; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+        #login button:disabled { background: #a4c6f4; cursor: wait; }
+        #login-error { margin-top: 12px; color: #b33a3a; font-size: 13px; min-height: 18px; }
+        #kc-status { display: none; padding: 8px 16px; background: #f5f7fa; color: #333; border-bottom: 1px solid #e1e4e8; font-size: 13px; }
+        #kc-status a { color: #0366d6; cursor: pointer; text-decoration: none; margin-left: 12px; }
+        #kc-status a:hover { text-decoration: underline; }
+        /* Hide Swagger UI's built-in Authorize / Logout buttons so auth is
+           only driven by our custom form. Without this the "Authorize"
+           button opens Swagger UI's generic "paste a token" dialog instead
+           of bringing the user back to our login form. */
+        .swagger-ui .auth-wrapper, .swagger-ui .scheme-container { display: none !important; }
+    </style>
+</head>
+<body>
+<div id="kc-status"></div>
+
+<div id="login">
+    <h2>Sign in to %title%</h2>
+    <form id="login-form" autocomplete="on">
+        <label>Username <input name="username" required autofocus></label>
+        <label>Password <input name="password" type="password" required></label>
+        <button type="submit">Sign in</button>
+        <div id="login-error"></div>
+    </form>
+</div>
+
+<div id="swagger-ui" style="display:none"></div>
+
+<script src="%contextRoot%/webjars/swagger-ui/5.18.2/swagger-ui-bundle.js"></script>
+<script src="%contextRoot%/webjars/swagger-ui/5.18.2/swagger-ui-standalone-preset.js"></script>
+
+<script>
+(() => {
+    const cfg = {
+        tokenUrl: '%openapi.ui.keycloakUrl%/realms/%openapi.ui.keycloakRealm%/protocol/openid-connect/token',
+        clientId: '%openapi.ui.keycloakClientId%',
+        scope:    'openid'
+    };
+
+    const formEl    = document.getElementById('login-form');
+    const errorEl   = document.getElementById('login-error');
+    const loginBox  = document.getElementById('login');
+    const statusBar = document.getElementById('kc-status');
+    const uiHost    = document.getElementById('swagger-ui');
+    const button    = formEl.querySelector('button');
+
+    async function fetchToken(username, password) {
+        const resp = await fetch(cfg.tokenUrl, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                grant_type: 'password',
+                client_id:  cfg.clientId,
+                username, password,
+                scope:      cfg.scope
+            })
+        });
+        const body = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            throw new Error(body.error_description || body.error || `HTTP ${resp.status}`);
+        }
+        return body.access_token;
+    }
+
+    function signOut() {
+        sessionStorage.removeItem('oidc_token');
+        // Force a full reload so Swagger UI's in-memory state is wiped and
+        // the login form is reachable again.
+        location.reload();
+    }
+
+    function bootSwaggerUi(token) {
+        loginBox.style.display = 'none';
+        uiHost.style.display   = 'block';
+        statusBar.style.display = 'flex';
+        statusBar.style.justifyContent = 'space-between';
+        statusBar.style.alignItems = 'center';
+
+        let who = 'an authenticated user';
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+            who = payload.preferred_username || payload.sub;
+        } catch { /* not a JWT — still fine */ }
+
+        statusBar.innerHTML = '';
+        const left = document.createElement('span');
+        left.textContent = `Signed in as ${who}.`;
+        const right = document.createElement('a');
+        right.textContent = 'Sign out';
+        right.addEventListener('click', signOut);
+        statusBar.append(left, right);
+
+        window.ui = SwaggerUIBundle({
+            url:         '%yamlUrl%',
+            dom_id:      '#swagger-ui',
+            deepLinking: true,
+            presets:     [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+            plugins:     [SwaggerUIBundle.plugins.DownloadUrl],
+            layout:      'StandaloneLayout',
+            onComplete:  () => window.ui.preauthorizeApiKey('bearer', token)
+        });
+    }
+
+    formEl.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        errorEl.textContent = '';
+        button.disabled = true; button.textContent = 'Signing in…';
+        try {
+            const data = new FormData(formEl);
+            const token = await fetchToken(data.get('username'), data.get('password'));
+            sessionStorage.setItem('oidc_token', token);
+            bootSwaggerUi(token);
+        } catch (e) {
+            errorEl.textContent = 'Login failed: ' + e.message;
+            console.error(e);
+        } finally {
+            button.disabled = false; button.textContent = 'Sign in';
+        }
+    });
+
+    // Resume an existing session if still valid.
+    const cached = sessionStorage.getItem('oidc_token');
+    if (cached) {
+        try {
+            const payload = JSON.parse(atob(cached.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+            if (payload.exp * 1000 > Date.now() + 10_000) bootSwaggerUi(cached);
+            else sessionStorage.removeItem('oidc_token');
+        } catch { sessionStorage.removeItem('oidc_token'); }
+    }
+})();
+</script>
+</body>
+</html>

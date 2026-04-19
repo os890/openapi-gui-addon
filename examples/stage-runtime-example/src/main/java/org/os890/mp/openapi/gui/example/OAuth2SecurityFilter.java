@@ -13,36 +13,33 @@
  */
 package org.os890.mp.openapi.gui.example;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.OASFilter;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.security.SecurityScheme;
 
 /**
- * Injects the OAuth2 "password"-flow security scheme at runtime, reading the
- * Keycloak token URL from MicroProfile Config. Keeps the URL out of Java
- * annotations so it can be overridden per stage via env vars or
- * -D system properties.
+ * Injects a minimal HTTP Bearer security scheme and a document-level
+ * SecurityRequirement so every operation gets a padlock and Swagger UI
+ * attaches the "Authorization: Bearer ..." header on Try-it-out.
+ *
+ * <p>The token itself is obtained by the embedded PKCE OIDC client in
+ * {@code openapi.html} (same-tab redirect to Keycloak, real authorization-
+ * code flow) and handed to Swagger UI via {@code preauthorizeApiKey}. That
+ * way the token carries {@code auth_time} and {@code nonce} — the shape
+ * the backend's validator expects — rather than the pared-down password-
+ * grant shape.
  */
 public class OAuth2SecurityFilter implements OASFilter {
 
     @Override
     public void filterOpenAPI(OpenAPI openAPI) {
-        // Use this class's ClassLoader explicitly — during deployment the
-        // TCCL can point at the deployer and miss the WAR's config source.
-        Config cfg = ConfigProvider.getConfig(getClass().getClassLoader());
-
         SecurityScheme scheme = OASFactory.createSecurityScheme()
-                .type(SecurityScheme.Type.OAUTH2)
-                .description("OAuth2 password grant (direct access) — Swagger UI asks for "
-                        + "username / password / client_id and POSTs directly to Keycloak's "
-                        + "token endpoint. No popup, no redirect, no COOP interaction.")
-                .flows(OASFactory.createOAuthFlows()
-                        .password(OASFactory.createOAuthFlow()
-                                .tokenUrl(cfg.getValue("app.oauth2.tokenUrl", String.class))
-                                .addScope("openid", "OIDC ID token")));
+                .type(SecurityScheme.Type.HTTP)
+                .scheme("bearer")
+                .bearerFormat("JWT")
+                .description("Keycloak access token — obtained automatically by the "
+                        + "embedded OIDC+PKCE client in the Swagger UI page.");
 
         if (openAPI.getComponents() == null) {
             openAPI.setComponents(OASFactory.createComponents());
