@@ -1,8 +1,7 @@
 {
   "realm": "demo",
   "auth-server-url": "http://localhost:8081",
-  "ssl-required": "none",
   "resource": "openapi-ui",
-  "public-client": true,
+  "bearer-only": true,
   "principal-attribute": "preferred_username"
 }

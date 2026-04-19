@@ -18,25 +18,23 @@
          version="6.0">
 
     <!--
-      Cookie / session approach: protect the ENTIRE WAR so the first
-      request triggers the full OIDC flow (redirect to Keycloak, login,
-      JSESSIONID established). Every subsequent same-origin request —
-      including Swagger UI's "Try it out" — automatically carries the
-      session cookie and is accepted by Elytron OIDC without any Bearer
-      token. No popup, no window.opener, no COOP interaction.
+      Bearer-token approach: the REST endpoints require a Bearer token,
+      but the Swagger UI itself must stay publicly reachable so the user
+      can open it, click Authorize, paste a token into the HTTP-Bearer
+      dialog, and then Try-it-out. Accordingly only /hello/* is
+      constrained; /openapi-ui/*, /webjars/*, /openapi stay open.
+
+      <role-name>**</role-name> = "any authenticated user" — no enumeration
+      of app roles required. Role-level access is handled at the method
+      level via @RolesAllowed, and the container resolves role names
+      through SecurityContext.isUserInRole(name) without needing prior
+      <security-role> declarations.
     -->
     <security-constraint>
         <web-resource-collection>
-            <web-resource-name>Whole WAR</web-resource-name>
-            <url-pattern>/*</url-pattern>
+            <web-resource-name>Hello REST</web-resource-name>
+            <url-pattern>/hello/*</url-pattern>
         </web-resource-collection>
-        <!--
-          <role-name>**</role-name> means "any authenticated user" — no
-          enumeration of app roles required. Role-level access is handled
-          at the method level via @RolesAllowed, and the container resolves
-          role names through SecurityContext.isUserInRole(name) without
-          needing prior <security-role> declarations.
-        -->
         <auth-constraint>
             <role-name>**</role-name>
         </auth-constraint>

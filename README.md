@@ -162,6 +162,7 @@ Related branches:
 - `oauth2-support_simple_prefilled` — same plus `initOAuth()` prefill.
 - `oauth2-rolesallowed` — auto-derives `SecurityRequirement` from `@RolesAllowed` / `@PermitAll` / `@DenyAll`.
 - `oauth2-support_simple-cookie_plain` — **same as this branch but drops the addon entirely**, using upstream `org.microprofile-ext.openapi-ext:openapi-ui` instead. Proves that none of the addon's additions are needed for the cookie + `@RolesAllowed` story. Also drops every role declaration (`<security-role>` in `web.xml` and `@DeclareRoles` on the Application class) — useful when your app has a large set of roles that would be tedious to enumerate.
+- `oauth2-support_simple-bearer` — Bearer-token variant: backend is `bearer-only`, Swagger UI declares an OAuth2 `password`-flow scheme so the Authorize dialog asks inline for username / password and exchanges them against Keycloak's token endpoint. No popup, no redirect, no manual token paste. Uses plain upstream `openapi-ui`. The security scheme **and** the document-level security requirement are both produced by a small `OASFilter` from MP Config, so REST resources stay 100% Jakarta — no per-class `@SecurityRequirement` needed even with a large number of endpoints. Best when the Keycloak instance can't be reconfigured and you want a paste-free bearer UX.
 
 ## White-Labeling
 
