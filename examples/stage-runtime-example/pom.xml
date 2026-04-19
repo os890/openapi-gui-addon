@@ -51,15 +51,17 @@
             <version>3.1</version>
             <scope>provided</scope>
         </dependency>
+        <!--
+          Upstream openapi-ui from microprofile-extensions — no fork, no
+          shade, no custom config keys. Works as-is for this demo's cookie
+          flow because authentication is entirely server-side (Elytron
+          OIDC); the UI is just a static asset that happens to live inside
+          the WAR.
+        -->
         <dependency>
-            <groupId>org.os890.mp-ext</groupId>
-            <artifactId>openapi-gui-addon</artifactId>
-            <version>1.11.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.os890.mp-ext.examples</groupId>
-            <artifactId>openapi-gui-config</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.microprofile-ext.openapi-ext</groupId>
+            <artifactId>openapi-ui</artifactId>
+            <version>2.1.1</version>
         </dependency>
     </dependencies>
 

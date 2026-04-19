@@ -30,8 +30,15 @@
             <web-resource-name>Whole WAR</web-resource-name>
             <url-pattern>/*</url-pattern>
         </web-resource-collection>
+        <!--
+          <role-name>**</role-name> means "any authenticated user" — no
+          enumeration of app roles required. Role-level access is handled
+          at the method level via @RolesAllowed, and the container resolves
+          role names through SecurityContext.isUserInRole(name) without
+          needing prior <security-role> declarations.
+        -->
         <auth-constraint>
-            <role-name>*</role-name>
+            <role-name>**</role-name>
         </auth-constraint>
     </security-constraint>
 
@@ -52,12 +59,5 @@
         <param-name>resteasy.role.based.security</param-name>
         <param-value>true</param-value>
     </context-param>
-
-    <security-role>
-        <role-name>user</role-name>
-    </security-role>
-    <security-role>
-        <role-name>admin</role-name>
-    </security-role>
 
 </web-app>

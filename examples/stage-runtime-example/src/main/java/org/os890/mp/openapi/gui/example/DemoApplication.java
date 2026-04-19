@@ -16,18 +16,18 @@ package org.os890.mp.openapi.gui.example;
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
 import org.eclipse.microprofile.openapi.annotations.info.Info;
 
-import jakarta.annotation.security.DeclareRoles;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 
 @ApplicationPath("/")
-@DeclareRoles({"user", "admin"})
 @OpenAPIDefinition(info = @Info(title = "Hello API", version = "1.0",
         description = "Runtime project-stage demo. Keycloak OIDC is enforced by "
                 + "WildFly Elytron server-side; authentication rides on a session "
                 + "cookie established during the first OIDC redirect. Swagger UI "
                 + "has no Authorize button — \"Try it out\" uses the cookie the "
                 + "browser already holds. @RolesAllowed is enforced on JAX-RS "
-                + "methods via Resteasy role-based security (enabled in web.xml)."))
+                + "methods via Resteasy role-based security (enabled in web.xml). "
+                + "No role enumeration anywhere — neither <security-role> in "
+                + "web.xml nor @DeclareRoles here."))
 public class DemoApplication extends Application {
 }

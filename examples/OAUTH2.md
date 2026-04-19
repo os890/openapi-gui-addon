@@ -1,9 +1,15 @@
-# OAuth2 / Keycloak Demo (session-cookie variant)
+# OAuth2 / Keycloak Demo (session-cookie variant, plain openapi-ui)
 
-Shows how to keep the OpenAPI UI addon working when the underlying REST API
-is protected by Keycloak — **without a popup-based OAuth2 flow in Swagger
-UI**. Authentication runs entirely on the server side through WildFly
-Elytron OIDC, and "Try it out" rides on the resulting JSESSIONID cookie.
+Shows how to keep the OpenAPI UI working when the underlying REST API is
+protected by Keycloak — **without a popup-based OAuth2 flow in Swagger
+UI, and without this repo's `openapi-gui-addon`**. Authentication runs
+entirely on the server side through WildFly Elytron OIDC, and "Try it
+out" rides on the resulting JSESSIONID cookie.
+
+This branch depends only on the upstream
+`org.microprofile-ext.openapi-ext:openapi-ui` artifact. Everything
+interesting lives outside the addon — so dropping the addon changes
+nothing in the user-visible flow.
 
 The demo protects the **Hello API** (`stage-runtime-example`). The other
 two demos stay open so you can compare.
@@ -45,18 +51,20 @@ Java adapter used to provide.
 
 | Piece | Popup variant (`oauth2-support_simple`) | This variant |
 | --- | --- | --- |
+| UI dependency | custom `org.os890.mp-ext:openapi-gui-addon` | plain `org.microprofile-ext.openapi-ext:openapi-ui:2.1.1` |
 | `oidc.json` | `"bearer-only": true` | `"public-client": true` (no bearer-only) — Elytron does the full OIDC flow |
 | `web.xml` constraint | `/hello/*` only, UI stays public | `/*` — the whole WAR is gated by Keycloak, login happens before the UI loads |
 | OpenAPI doc | declares `oauth2` security scheme via OASFilter, operations tagged `security:[{keycloak:[]}]` | no security scheme declared at all — Swagger UI has no Authorize button |
-| `HelloResource` | `@SecurityRequirement(name = "keycloak")` | plain `@Path` — no OpenAPI security annotation |
+| `HelloResource` | `@SecurityRequirement(name = "keycloak")` | plain `@Path` + `@RolesAllowed` (pure Jakarta) |
 | `microprofile-config.properties` | `mp.openapi.filter=...` + `app.oauth2.*` URLs | OAuth2 keys removed — nothing to configure, Elytron reads `oidc.json` only |
 | `OAuth2SecurityFilter.java` | present, builds the OAuth2 scheme | deleted |
+| Role declarations | `<security-role>` / `@DeclareRoles` listing each role | **none** — `auth-constraint` is `**` (any authenticated user); `@RolesAllowed` resolves role names on the fly via `SecurityContext.isUserInRole()` |
 | User interaction | click Authorize → popup → Keycloak → back → Try it out | visit UI → redirect to Keycloak → login → Try it out (no extra clicks) |
 
 ## Key files
 
 - [`WEB-INF/oidc.json`](stage-runtime-example/src/main/webapp/WEB-INF/oidc.json) — Elytron OIDC client config. No `bearer-only`, so Elytron behaves as a full relying party (code flow + server-side token storage + session cookie).
-- [`WEB-INF/web.xml`](stage-runtime-example/src/main/webapp/WEB-INF/web.xml) — constrains `/*` so the whole WAR requires authentication. This is what forces the initial login before Swagger UI loads.
+- [`WEB-INF/web.xml`](stage-runtime-example/src/main/webapp/WEB-INF/web.xml) — constrains `/*` so the whole WAR requires authentication. Uses `<role-name>**</role-name>` (any authenticated user) so no `<security-role>` enumeration is required; turns on `resteasy.role.based.security` so `@RolesAllowed` is honoured on JAX-RS methods.
 - [`DemoApplication.java`](stage-runtime-example/src/main/java/org/os890/mp/openapi/gui/example/DemoApplication.java) — no `@OpenAPIDefinition.components` block: no security scheme is declared.
 - [`HelloResource.java`](stage-runtime-example/src/main/java/org/os890/mp/openapi/gui/example/HelloResource.java) — no OpenAPI security annotation. Jakarta EE's runtime security (driven by `web.xml` + Elytron OIDC) does the enforcement.
 
@@ -77,7 +85,8 @@ whatever hostname the backend will resolve.
 | `oauth2-support_simple` | Keycloak admin can set `Cross-Origin-Opener-Policy: same-origin-allow-popups`; you want the UI accessible without login. | Requires Keycloak tweak; popup flow still fragile against future browser changes. |
 | `oauth2-support_simple_prefilled` | Same as above; you want a one-click Authorize button (client_id prefilled). | Same constraints. |
 | `oauth2-rolesallowed` | You want Swagger UI security scheme auto-derived from `@RolesAllowed` / `@PermitAll` / `@DenyAll` so REST code stays pure Jakarta. | Still a popup-based flow underneath; COOP still applies. |
-| **This one** — `oauth2-support_simple-cookie` | You don't control Keycloak; you can't relax COOP; server-side OIDC is already part of your app's model. | Swagger UI is no longer publicly reachable — every visitor must log in. |
+| `oauth2-support_simple-cookie` | You don't control Keycloak; you can't relax COOP; server-side OIDC is already part of your app's model. Uses the addon. | Swagger UI is no longer publicly reachable — every visitor must log in. |
+| **This one** — `oauth2-support_simple-cookie_plain` | Same as the cookie variant but you want zero dependency on this repo's addon, and you have many application roles that you don't want to enumerate in `web.xml` / `@DeclareRoles`. | Same as above; also lose the addon's project-stage gate (shape that with a Maven profile instead). |
 
 ## Files touched (vs. plain `stage-runtime-example`)
 
@@ -92,4 +101,7 @@ whatever hostname the backend will resolve.
 | `Dockerfile.oauth2` + `enable-oidc.cli` | WildFly with `elytron-oidc-client` subsystem (unchanged). |
 | `build_and_start_oauth2.sh` | Podman pod wiring (unchanged). |
 
-The addon's source is not touched in any of the branches.
+This variant drops the addon entirely — the `stage-runtime-example`
+POM depends on `org.microprofile-ext.openapi-ext:openapi-ui:2.1.1`
+directly. The upstream plugin ships the same Swagger UI 5.18.2 webjar,
+so the runtime behaviour is identical.
