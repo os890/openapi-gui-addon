@@ -1,0 +1,48 @@
+{
+  "realm": "demo",
+  "enabled": true,
+  "sslRequired": "none",
+  "accessTokenLifespan": 1800,
+  "clients": [
+    {
+      "clientId": "openapi-ui",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/hello-api/webjars/swagger-ui/5.18.2/oauth2-redirect.html",
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080",
+        "+"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "demo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "User",
+      "email": "demo@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-demo"
+      ]
+    }
+  ]
+}

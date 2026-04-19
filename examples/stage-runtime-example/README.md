@@ -1,6 +1,13 @@
 # Stage Runtime Example
 
-Demonstrates enabling/disabling the OpenAPI UI based on a **runtime** system property.
+Demonstrates two things at once:
+
+1. Enabling/disabling the OpenAPI UI based on a **runtime** system property
+   (`project.stage`).
+2. **Protecting the REST endpoint with Keycloak OAuth2** while keeping the
+   OpenAPI UI ("Try it out" included) fully functional. See
+   [../OAUTH2.md](../OAUTH2.md) for the full story and the
+   `build_and_start_oauth2.sh` launcher.
 
 ## Dependency
 
@@ -43,6 +50,10 @@ Alternatively, use the interactive launcher from the `examples/` directory:
 
 ## Endpoints
 
-- REST: `http://localhost:8080/hello-api/hello`
-- OpenAPI UI: `http://localhost:8080/hello-api/openapi-ui/` (only when enabled)
-- OpenAPI document: `http://localhost:8080/hello-api/openapi`
+- REST: `http://localhost:8080/hello-api/hello` — protected by Keycloak (Bearer token required)
+- OpenAPI UI: `http://localhost:8080/hello-api/openapi-ui/` (open; only when `project.stage != production`)
+- OpenAPI document: `http://localhost:8080/hello-api/openapi` (open)
+
+To hit the protected REST endpoint from the UI, launch the full demo
+(WildFly + Keycloak) via `../build_and_start_oauth2.sh`, click **Authorize**
+in the UI, log in as `demo`/`demo`, then **Try it out**.

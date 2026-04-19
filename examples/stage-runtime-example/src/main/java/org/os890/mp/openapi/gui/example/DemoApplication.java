@@ -13,14 +13,36 @@
  */
 package org.os890.mp.openapi.gui.example;
 
+import org.eclipse.microprofile.openapi.annotations.Components;
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
+import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
 import org.eclipse.microprofile.openapi.annotations.info.Info;
+import org.eclipse.microprofile.openapi.annotations.security.OAuthFlow;
+import org.eclipse.microprofile.openapi.annotations.security.OAuthFlows;
+import org.eclipse.microprofile.openapi.annotations.security.OAuthScope;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 
 @ApplicationPath("/")
-@OpenAPIDefinition(info = @Info(title = "Hello API", version = "1.0",
-        description = "Runtime project-stage: OpenAPI UI disabled when project.stage=production"))
+@OpenAPIDefinition(
+        info = @Info(title = "Hello API", version = "1.0",
+                description = "Runtime project-stage demo, protected by Keycloak OAuth2."),
+        components = @Components(
+                securitySchemes = @SecurityScheme(
+                        securitySchemeName = "keycloak",
+                        type = SecuritySchemeType.OAUTH2,
+                        description = "Keycloak OIDC — authorization code flow with PKCE",
+                        flows = @OAuthFlows(
+                                authorizationCode = @OAuthFlow(
+                                        authorizationUrl = "http://localhost:8081/realms/demo/protocol/openid-connect/auth",
+                                        tokenUrl = "http://localhost:8081/realms/demo/protocol/openid-connect/token",
+                                        scopes = @OAuthScope(name = "openid", description = "OIDC ID token")
+                                )
+                        )
+                )
+        )
+)
 public class DemoApplication extends Application {
 }

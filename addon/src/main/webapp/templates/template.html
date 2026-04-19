@@ -30,6 +30,7 @@
         <script src='%contextRoot%/webjars/swagger-ui/${swagger-ui.version}/swagger-ui-standalone-preset.js' type='text/javascript'></script>
         <script>
             var defined_apis = %urlsData%;
+            var oauth2_init = %oauth2InitData%;
 
             window.onload = async function () {
                 var swaggerConfig = {
@@ -65,6 +66,7 @@
 
                     swaggerConfig.urls = available.length > 0 ? available : defined_apis;
                     window.ui = SwaggerUIBundle(swaggerConfig);
+                    if (oauth2_init) window.ui.initOAuth(oauth2_init);
 
                     if (unavailable.length > 0) {
                         setTimeout(function () {
@@ -88,6 +90,7 @@
                 } else {
                     swaggerConfig.url = "%yamlUrl%";
                     window.ui = SwaggerUIBundle(swaggerConfig);
+                    if (oauth2_init) window.ui.initOAuth(oauth2_init);
                 }
             }
         </script>

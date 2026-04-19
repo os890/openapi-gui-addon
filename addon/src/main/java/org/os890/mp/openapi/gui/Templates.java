@@ -72,6 +72,7 @@ public class Templates {
         html = html.replaceAll(VAR_CONTEXT_ROOT, getContextRoot(requestInfo));
         html = html.replaceAll(VAR_YAML_URL, yamlUrl);
         html = html.replaceAll(VAR_URLS_DATA, getUrlsData());
+        html = html.replaceAll(VAR_OAUTH2_INIT_DATA, getOAuth2InitData());
         html = html.replaceAll(VAR_CURRENT_YEAR, getCopyrightYear());
         html = html.replaceAll(VAR_OAUTH2_REDIRECT_URI, oauth2RedirectUri);
 
@@ -95,6 +96,20 @@ public class Templates {
             html = html.replaceAll(domId, domId + "\n                    defaultModelsExpandDepth: -1,");
         }
         return html;
+    }
+
+    private String getOAuth2InitData() {
+        if (!oauth2ClientId.isPresent() || oauth2ClientId.get().isBlank()) {
+            return "null";
+        }
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("\"clientId\":\"").append(oauth2ClientId.get()).append("\"");
+        if (oauth2Scopes.isPresent() && !oauth2Scopes.get().isBlank()) {
+            sb.append(",\"scopes\":\"").append(oauth2Scopes.get()).append("\"");
+        }
+        sb.append(",\"usePkceWithAuthorizationCodeGrant\":").append(oauth2UsePkce);
+        sb.append("}");
+        return sb.toString();
     }
 
     private String getUrlsData() {
@@ -214,7 +229,7 @@ public class Templates {
     }
 
     private static final String X_REQUEST_URI = "x-request-uri";
-    private static final List<String> KNOWN_PROPERTIES = Arrays.asList("openapi.ui.serverVisibility","openapi.ui.exploreFormVisibility","openapi.ui.swaggerHeaderVisibility","openapi.ui.copyrightBy","openapi.ui.copyrightYear","openapi.ui.title","openapi.ui.contextRoot","openapi.ui.yamlUrl","openapi.ui.swaggerUiTheme","openapi.ui.urls");
+    private static final List<String> KNOWN_PROPERTIES = Arrays.asList("openapi.ui.serverVisibility","openapi.ui.exploreFormVisibility","openapi.ui.swaggerHeaderVisibility","openapi.ui.copyrightBy","openapi.ui.copyrightYear","openapi.ui.title","openapi.ui.contextRoot","openapi.ui.yamlUrl","openapi.ui.swaggerUiTheme","openapi.ui.urls","openapi.ui.oauth2.clientId","openapi.ui.oauth2.scopes","openapi.ui.oauth2.usePkce");
 
     @Inject @ConfigProperty(name = "openapi.ui.copyrightBy") private Optional<String> copyrightBy;
     @Inject @ConfigProperty(name = "openapi.ui.copyrightYear") private Optional<String> copyrightYear;
@@ -228,6 +243,9 @@ public class Templates {
     @Inject @ConfigProperty(name = "openapi.ui.createdWithVisibility", defaultValue = "visible") private String createdWithVisibility;
     @Inject @ConfigProperty(name = "openapi.ui.modelsVisibility", defaultValue = "visible") private String modelsVisibility;
     @Inject @ConfigProperty(name = "openapi.ui.oauth2RedirectUri", defaultValue = "/oauth2-redirect.html") private String oauth2RedirectUri;
+    @Inject @ConfigProperty(name = "openapi.ui.oauth2.clientId") private Optional<String> oauth2ClientId;
+    @Inject @ConfigProperty(name = "openapi.ui.oauth2.scopes") private Optional<String> oauth2Scopes;
+    @Inject @ConfigProperty(name = "openapi.ui.oauth2.usePkce", defaultValue = "false") private boolean oauth2UsePkce;
     @Inject @ConfigProperty(name = "openapi.ui.urls") private Optional<String> urls;
     @Inject private Config config;
 
@@ -237,6 +255,7 @@ public class Templates {
     private static final String VAR_CONTEXT_ROOT = "%contextRoot%";
     private static final String VAR_YAML_URL = "%yamlUrl%";
     private static final String VAR_URLS_DATA = "%urlsData%";
+    private static final String VAR_OAUTH2_INIT_DATA = "%oauth2InitData%";
     private static final String VAR_SWAGGER_THEME = "%swaggerUiTheme%";
     private static final String VAR_SWAGGER_HEADER_VISIBILITY = "%swaggerHeaderVisibility%";
     private static final String VAR_EXPLORE_FORM_VISIBILITY = "%exploreFormVisibility%";
