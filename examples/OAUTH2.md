@@ -1,10 +1,21 @@
-# OAuth2 / Keycloak Demo (session-cookie variant, plain openapi-ui)
+# OAuth2 / Keycloak Demo (same-tab redirect flow)
 
-Shows how to keep the OpenAPI UI working when the underlying REST API is
-protected by Keycloak — **without a popup-based OAuth2 flow in Swagger
-UI, and without this repo's `openapi-gui-addon`**. Authentication runs
-entirely on the server side through WildFly Elytron OIDC, and "Try it
-out" rides on the resulting JSESSIONID cookie.
+Reference demo for the classic **server-side OIDC Authorization Code
+flow via full-page same-tab redirects**, the way older Keycloak
+Java-adapter deployments always behaved. Every hop is a normal HTTP
+`302` in the current tab — browser → Keycloak login → browser →
+back to the original URL — no popups, no `window.opener`, no COOP.
+Authentication runs entirely on the server side through WildFly
+Elytron OIDC, and Swagger UI's "Try it out" rides on the resulting
+`JSESSIONID` cookie without needing any OAuth2 security scheme declared
+in the OpenAPI document.
+
+Content-wise this branch is byte-identical to
+`oauth2-support_simple-cookie_plain`; it exists as a named reference
+that specifically highlights the same-tab-redirect character of the
+flow (useful for apps that need to match an existing Keycloak
+integration that looks exactly like this — e.g. legacy apps that
+previously used the Keycloak Java adapter).
 
 This branch depends only on the upstream
 `org.microprofile-ext.openapi-ext:openapi-ui` artifact. Everything
@@ -86,7 +97,8 @@ whatever hostname the backend will resolve.
 | `oauth2-support_simple_prefilled` | Same as above; you want a one-click Authorize button (client_id prefilled). | Same constraints. |
 | `oauth2-rolesallowed` | You want Swagger UI security scheme auto-derived from `@RolesAllowed` / `@PermitAll` / `@DenyAll` so REST code stays pure Jakarta. | Still a popup-based flow underneath; COOP still applies. |
 | `oauth2-support_simple-cookie` | You don't control Keycloak; you can't relax COOP; server-side OIDC is already part of your app's model. Uses the addon. | Swagger UI is no longer publicly reachable — every visitor must log in. |
-| **This one** — `oauth2-support_simple-cookie_plain` | Same as the cookie variant but you want zero dependency on this repo's addon, and you have many application roles that you don't want to enumerate in `web.xml` / `@DeclareRoles`. | Same as above; also lose the addon's project-stage gate (shape that with a Maven profile instead). |
+| `oauth2-support_simple-cookie_plain` | Same as the cookie variant but you want zero dependency on this repo's addon, and you have many application roles that you don't want to enumerate in `web.xml` / `@DeclareRoles`. | Same as above; also lose the addon's project-stage gate (shape that with a Maven profile instead). |
+| **This one** — `oauth2-support_simple-cookie_redirect` | You want a clean reference for the same-tab full-page-redirect OIDC flow exactly as the old Keycloak Java adapter used to do it — useful for porting legacy apps or for visually demoing "redirect, login, redirect back, session cookie" without any popup or token paste. | Same as `cookie_plain`; this branch is byte-identical. |
 
 ## Files touched (vs. plain `stage-runtime-example`)
 

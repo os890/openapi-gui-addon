@@ -162,6 +162,7 @@ Related branches:
 - `oauth2-support_simple_prefilled` — same plus `initOAuth()` prefill.
 - `oauth2-rolesallowed` — auto-derives `SecurityRequirement` from `@RolesAllowed` / `@PermitAll` / `@DenyAll`.
 - `oauth2-support_simple-cookie_plain` — **same as this branch but drops the addon entirely**, using upstream `org.microprofile-ext.openapi-ext:openapi-ui` instead. Proves that none of the addon's additions are needed for the cookie + `@RolesAllowed` story. Also drops every role declaration (`<security-role>` in `web.xml` and `@DeclareRoles` on the Application class) — useful when your app has a large set of roles that would be tedious to enumerate.
+- `oauth2-support_simple-cookie_redirect` — byte-identical to `cookie_plain`, kept as a named reference for the classic same-tab full-page-redirect OIDC flow (the way older Keycloak Java-adapter deployments behaved). Useful when porting a legacy app and you want the demo's browser experience to match the app's auth flow exactly.
 
 ## White-Labeling
 
