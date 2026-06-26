@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+    <!-- HTTP Digest. realm-name must match the Elytron mechanism-realm-configurations realm-name
+         configured in wildfly/configure.cli (poc-digest). -->
+    <login-config>
+        <auth-method>DIGEST</auth-method>
+        <realm-name>poc-digest</realm-name>
+    </login-config>
+
+    <!-- Protect only the REST API; the OpenAPI document (/module-b/openapi) stays open. -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>module-b-api</web-resource-name>
+            <url-pattern>/api/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>user</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <security-role>
+        <role-name>user</role-name>
+    </security-role>
+
+</web-app>

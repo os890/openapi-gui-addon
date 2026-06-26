@@ -1,0 +1,2 @@
+# Staged WAR files are produced by build_and_run.sh
+*.war

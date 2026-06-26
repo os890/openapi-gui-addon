@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jboss-web>
+    <!-- Maps to the Undertow application-security-domain created in wildfly/configure.cli,
+         which wires the Elytron DIGEST http-authentication-factory. -->
+    <security-domain>poc-digest</security-domain>
+</jboss-web>

@@ -1,0 +1,97 @@
+# PoC — Per-module OIDC + Digest auth in one shared OpenAPI GUI
+
+One WildFly server, **one app made of two WAR modules** with different context roots, both
+exposed through the **single shared Swagger UI** of this project (the `openapi-gui-addon`
+multi-module dropdown — *not* a separate Swagger setup per module).
+
+The new part: the two modules use **different** authentication schemes, and the Swagger UI
+**"Authorize" / "Try it out" flow uses the correct scheme per module** — never one for both.
+
+| Module | Context root | OpenAPI endpoint | Secured by | How Swagger UI authenticates |
+|--------|--------------|------------------|------------|------------------------------|
+| Module A | `/module-a` | `/module-a/openapi` | **OIDC** (Keycloak) | native Swagger UI "Authorize" → auth-code + PKCE → bearer token |
+| Module B | `/module-b` | `/module-b/openapi` | **HTTP Digest** | addon's context-root-aware `requestInterceptor` does the digest challenge/response |
+| GUI | `/gui` | — | none | hosts the one shared Swagger UI |
+
+## Why this works — the key idea
+
+In multi-spec (`urls`) mode, Swagger UI loads **one spec at a time** and rebuilds the
+"Authorize" dialog from *that* spec's `securitySchemes`. So per-module auth is already the
+default — **as long as each module's OpenAPI document declares its own scheme**:
+
+- **Module A** declares `openIdConnect` (`ModuleAApplication`), so the native Authorize button
+  runs the OIDC flow. `openapi.ui.oauth2ClientId=swagger-ui` presets the dialog (public client + PKCE).
+- **Module B** declares `http`/`digest` (`ModuleBApplication`). Swagger UI has **no** native
+  digest flow, so the addon adds one: a **single, context-root-aware `requestInterceptor`**
+  (config `openapi.ui.digestPaths=/module-b`). It runs the digest challenge/response **only**
+  for `/module-b/**` requests and leaves module A's OIDC bearer token untouched.
+
+Both pieces are generic, config-gated features of the addon (no behavior change when the new
+properties are unset). See `addon/src/main/webapp/templates/template.html` and `Templates.java`.
+
+## Requirements
+
+- `podman` (with a started machine) + `podman compose`
+- JDK 17+ and Maven (to build the WARs)
+
+## Run
+
+```bash
+./build_and_run.sh
+```
+
+This builds & installs the addon, builds the three WARs, bakes them into a WildFly 39 image
+(with the Elytron DIGEST + elytron-oidc-client configuration applied via `wildfly/configure.cli`),
+and starts WildFly + Keycloak via `compose.yml`.
+
+Then open the **shared Swagger UI**:
+
+> http://localhost:8080/gui/openapi-ui
+
+## Try it
+
+Use the dropdown (top-right) to switch modules.
+
+**Module A (OIDC)**
+1. Select *Module A (OIDC)*.
+2. Click **Authorize** → you're redirected to Keycloak → log in as **`alice` / `alice`**.
+3. Expand `GET /profile` → **Try it out** → **Execute**. The request carries the bearer token;
+   the response shows the authenticated user.
+
+**Module B (Digest)**
+1. Select *Module B (Digest)*.
+2. Expand `GET /time` → **Try it out** → **Execute**.
+3. On the first call you're prompted for digest credentials → **`digestuser` / `digestpass`**.
+   The interceptor computes the `Authorization: Digest …` header; the response shows the user.
+
+Switching back and forth shows each module using **its own** scheme.
+
+## How the Keycloak hostname is handled
+
+`compose.yml` runs Keycloak with `KC_HOSTNAME=http://localhost:8081` and
+`KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`. The issuer/authorization endpoints are fixed to the
+browser-reachable `localhost:8081`, while WildFly (bearer-only validation) reaches the
+token/JWKS endpoints over the internal `http://keycloak:8080` — avoiding an issuer mismatch.
+
+## Layout
+
+```
+poc-oidc-digest/
+├── compose.yml                 podman/docker compose: keycloak + wildfly
+├── build_and_run.sh            build everything + start the stack
+├── keycloak/poc-realm.json     realm "poc": swagger-ui (public/PKCE) client + user alice
+├── wildfly/
+│   ├── Dockerfile              WildFly 39 + config + the 3 WARs
+│   ├── configure.cli           Elytron DIGEST + elytron-oidc-client setup
+│   ├── poc-users.properties    digest user (clear-text realm)
+│   └── poc-groups.properties   digest user -> "user" role
+├── gui/                        the shared Swagger UI host (bundles the addon)
+├── module-a-oidc/              OIDC-secured module (bearer-only resource server)
+└── module-b-digest/            Digest-secured module
+```
+
+## Stop
+
+```bash
+podman compose -f compose.yml down
+```

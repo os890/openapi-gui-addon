@@ -1,0 +1,8 @@
+{
+  "client-id": "module-a",
+  "provider-url": "http://keycloak:8080/realms/poc",
+  "bearer-only": true,
+  "ssl-required": "none",
+  "principal-attribute": "preferred_username",
+  "verify-token-audience": false
+}

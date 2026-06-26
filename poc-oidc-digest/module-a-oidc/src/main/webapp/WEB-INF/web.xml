@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+    <!-- OIDC via WildFly elytron-oidc-client; configuration in WEB-INF/oidc.json (bearer-only). -->
+    <login-config>
+        <auth-method>OIDC</auth-method>
+    </login-config>
+
+    <!-- Protect only the REST API. The OpenAPI document (/module-a/openapi) is served by the
+         SmallRye extension outside this constraint, so the shared Swagger UI can load the spec
+         without a token. -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>module-a-api</web-resource-name>
+            <url-pattern>/api/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <!-- ** = any authenticated user -->
+            <role-name>**</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+</web-app>

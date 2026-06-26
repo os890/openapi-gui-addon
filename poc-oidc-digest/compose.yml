@@ -1,0 +1,30 @@
+# podman compose / docker compose stack for the PoC.
+#   browser  -> http://localhost:8080/gui/openapi-ui   (shared Swagger UI)
+#   browser  -> http://localhost:8081                  (Keycloak)
+#
+# Keycloak hostname v2: issuer/frontend is fixed to http://localhost:8081 (browser-reachable),
+# while backchannel endpoints are resolved dynamically — so WildFly reaches the token/jwks
+# endpoints via the internal http://keycloak:8080 without an issuer mismatch.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://localhost:8081
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:z
+
+  wildfly:
+    build: ./wildfly
+    ports:
+      - "8080:8080"
+      - "9990:9990"
+    depends_on:
+      - keycloak

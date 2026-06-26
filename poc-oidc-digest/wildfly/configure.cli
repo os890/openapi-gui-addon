@@ -1,0 +1,33 @@
+# Applied at image build time against standalone-microprofile.xml.
+embed-server --server-config=standalone-microprofile.xml --std-out=echo
+
+# --- Ensure the OIDC client subsystem is present (used by module-a, bearer-only) ---
+if (outcome != success) of /subsystem=elytron-oidc-client:read-resource
+    /extension=org.wildfly.extension.elytron-oidc-client:add
+    /subsystem=elytron-oidc-client:add
+end-if
+
+# --- HTTP Digest setup for module-b ---
+
+# Properties realm with clear-text passwords so Elytron can derive the DIGEST A1 hash.
+/subsystem=elytron/properties-realm=pocDigestRealm:add(\
+    users-properties={path=poc-users.properties, relative-to=jboss.server.config.dir, plain-text=true}, \
+    groups-properties={path=poc-groups.properties, relative-to=jboss.server.config.dir})
+
+# Security domain over that realm; decode the "groups" attribute into roles.
+/subsystem=elytron/security-domain=pocDigestDomain:add(\
+    default-realm=pocDigestRealm, \
+    permission-mapper=default-permission-mapper, \
+    realms=[{realm=pocDigestRealm, role-decoder=groups-to-roles}])
+
+# HTTP authentication factory exposing the DIGEST mechanism with realm-name "poc-digest"
+# (must match <realm-name> in module-b's web.xml login-config and the browser challenge).
+/subsystem=elytron/http-authentication-factory=pocDigestHttpAuth:add(\
+    security-domain=pocDigestDomain, \
+    http-server-mechanism-factory=global, \
+    mechanism-configurations=[{mechanism-name=DIGEST, mechanism-realm-configurations=[{realm-name="poc-digest"}]}])
+
+# Expose it to Undertow as application-security-domain "poc-digest" (referenced by jboss-web.xml).
+/subsystem=undertow/application-security-domain=poc-digest:add(http-authentication-factory=pocDigestHttpAuth)
+
+stop-embedded-server
