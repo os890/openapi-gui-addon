@@ -28,6 +28,7 @@ public class ProfileResource {
                 ? securityContext.getUserPrincipal().getName()
                 : "anonymous";
         return Map.of(
+                "greeting", "Hello " + name + ", welcome to module-a!",
                 "module", "module-a",
                 "secured-by", "oidc (bearer token)",
                 "authenticated-user", name);

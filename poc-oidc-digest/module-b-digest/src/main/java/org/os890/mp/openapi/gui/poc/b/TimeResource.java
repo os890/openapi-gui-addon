@@ -29,6 +29,7 @@ public class TimeResource {
                 ? securityContext.getUserPrincipal().getName()
                 : "anonymous";
         return Map.of(
+                "greeting", "Hello " + name + ", welcome to module-b!",
                 "module", "module-b",
                 "secured-by", "http digest",
                 "authenticated-user", name,
