@@ -6,28 +6,15 @@
   "clients": [
     {
       "clientId": "swagger-ui",
-      "name": "Swagger UI (public, PKCE)",
+      "name": "Swagger UI (public, password grant)",
       "enabled": true,
       "publicClient": true,
-      "standardFlowEnabled": true,
+      "standardFlowEnabled": false,
       "directAccessGrantsEnabled": true,
-      "redirectUris": [
-        "http://localhost:8090/*"
-      ],
       "webOrigins": [
         "http://localhost:8090"
       ],
-      "attributes": {
-        "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:8090/*"
-      },
       "fullScopeAllowed": true
-    },
-    {
-      "clientId": "module-a",
-      "name": "Module A (bearer-only resource server)",
-      "enabled": true,
-      "bearerOnly": true
     }
   ],
   "users": [

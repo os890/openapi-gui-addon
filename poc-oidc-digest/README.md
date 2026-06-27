@@ -90,7 +90,7 @@ token/JWKS endpoints over the internal `http://keycloak:8080` — avoiding an is
 poc-oidc-digest/
 ├── compose.yml                 podman/docker compose: keycloak + wildfly
 ├── build_and_run.sh            build everything + start the stack
-├── keycloak/poc-realm.json     realm "poc": swagger-ui (public/PKCE) client + user alice
+├── keycloak/poc-realm.json     realm "poc": swagger-ui (public, password grant) client + user alice
 ├── wildfly/
 │   ├── Dockerfile              WildFly 39 + config + the 3 WARs
 │   ├── configure.cli           Elytron DIGEST + elytron-oidc-client setup
