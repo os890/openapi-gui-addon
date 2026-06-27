@@ -72,7 +72,6 @@ public class Templates {
         html = html.replaceAll(VAR_CONTEXT_ROOT, getContextRoot(requestInfo));
         html = html.replaceAll(VAR_YAML_URL, yamlUrl);
         html = html.replaceAll(VAR_URLS_DATA, getUrlsData());
-        html = html.replaceAll(VAR_DIGEST_PATHS_DATA, getDigestPathsData());
         html = html.replaceAll(VAR_CURRENT_YEAR, getCopyrightYear());
         html = html.replaceAll(VAR_OAUTH2_REDIRECT_URI, oauth2RedirectUri);
         html = html.replaceAll(VAR_OAUTH2_CLIENT_ID, oauth2ClientId.orElse(""));
@@ -97,27 +96,6 @@ public class Templates {
             html = html.replaceAll(domId, domId + "\n                    defaultModelsExpandDepth: -1,");
         }
         return html;
-    }
-
-    // Comma-separated path prefixes whose endpoints are secured via HTTP Digest.
-    // Rendered as a JS array so the Swagger UI requestInterceptor can run the digest
-    // challenge/response only for requests targeting those modules. Empty => no-op.
-    private String getDigestPathsData() {
-        if (digestPaths.isPresent() && !digestPaths.get().isEmpty()) {
-            StringBuilder sb = new StringBuilder("[");
-            String[] entries = digestPaths.get().split(",");
-            boolean first = true;
-            for (String entry : entries) {
-                String prefix = entry.trim();
-                if (prefix.isEmpty()) continue;
-                if (!first) sb.append(",");
-                sb.append("\"").append(prefix).append("\"");
-                first = false;
-            }
-            sb.append("]");
-            return sb.toString();
-        }
-        return "[]";
     }
 
     private String getUrlsData() {
@@ -237,7 +215,7 @@ public class Templates {
     }
 
     private static final String X_REQUEST_URI = "x-request-uri";
-    private static final List<String> KNOWN_PROPERTIES = Arrays.asList("openapi.ui.serverVisibility","openapi.ui.exploreFormVisibility","openapi.ui.swaggerHeaderVisibility","openapi.ui.copyrightBy","openapi.ui.copyrightYear","openapi.ui.title","openapi.ui.contextRoot","openapi.ui.yamlUrl","openapi.ui.swaggerUiTheme","openapi.ui.urls","openapi.ui.digestPaths","openapi.ui.oauth2RedirectUri","openapi.ui.oauth2ClientId");
+    private static final List<String> KNOWN_PROPERTIES = Arrays.asList("openapi.ui.serverVisibility","openapi.ui.exploreFormVisibility","openapi.ui.swaggerHeaderVisibility","openapi.ui.copyrightBy","openapi.ui.copyrightYear","openapi.ui.title","openapi.ui.contextRoot","openapi.ui.yamlUrl","openapi.ui.swaggerUiTheme","openapi.ui.urls","openapi.ui.oauth2RedirectUri","openapi.ui.oauth2ClientId");
 
     @Inject @ConfigProperty(name = "openapi.ui.copyrightBy") private Optional<String> copyrightBy;
     @Inject @ConfigProperty(name = "openapi.ui.copyrightYear") private Optional<String> copyrightYear;
@@ -253,7 +231,6 @@ public class Templates {
     @Inject @ConfigProperty(name = "openapi.ui.oauth2RedirectUri", defaultValue = "/oauth2-redirect.html") private String oauth2RedirectUri;
     @Inject @ConfigProperty(name = "openapi.ui.oauth2ClientId") private Optional<String> oauth2ClientId;
     @Inject @ConfigProperty(name = "openapi.ui.urls") private Optional<String> urls;
-    @Inject @ConfigProperty(name = "openapi.ui.digestPaths") private Optional<String> digestPaths;
     @Inject private Config config;
 
     private static final String VAR_COPYRIGHT_BY = "%copyrighBy%";
@@ -262,7 +239,6 @@ public class Templates {
     private static final String VAR_CONTEXT_ROOT = "%contextRoot%";
     private static final String VAR_YAML_URL = "%yamlUrl%";
     private static final String VAR_URLS_DATA = "%urlsData%";
-    private static final String VAR_DIGEST_PATHS_DATA = "%digestPathsData%";
     private static final String VAR_SWAGGER_THEME = "%swaggerUiTheme%";
     private static final String VAR_SWAGGER_HEADER_VISIBILITY = "%swaggerHeaderVisibility%";
     private static final String VAR_EXPLORE_FORM_VISIBILITY = "%exploreFormVisibility%";

@@ -13,12 +13,10 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
-import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 
 import java.util.Map;
 
 @Path("/profile")
-@SecurityRequirement(name = "oidc")
 public class ProfileResource {
 
     @GET

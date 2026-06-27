@@ -13,13 +13,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
-import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
 
 @Path("/time")
-@SecurityRequirement(name = "digest")
 public class TimeResource {
 
     @GET

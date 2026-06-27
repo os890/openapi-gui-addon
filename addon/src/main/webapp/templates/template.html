@@ -75,8 +75,6 @@
         </script>
         <script>
             var defined_apis = %urlsData%;
-            // Path prefixes whose modules are secured via HTTP Digest (configured via openapi.ui.digestPaths).
-            var digest_paths = %digestPathsData%;
             // Optional OIDC/OAuth2 client preset for the native Swagger UI "Authorize" dialog.
             var oauth2ClientId = "%oauth2ClientId%";
 
@@ -94,14 +92,34 @@
             // Cached digest challenge + credentials (per Swagger UI session). Single protection space for the PoC.
             var digestState = { challenge: null, nc: 0, username: null, password: null };
 
-            function toPathname(url) {
-                try { return new URL(url, window.location.origin).pathname; } catch (e) { return url || ''; }
+            // Decide purely from the *currently selected* OpenAPI document whether this module uses
+            // HTTP Digest — no GUI-side path config. A module signals digest in its own spec via a
+            // security scheme of type http with scheme "digest", or an "x-auth-mode: digest" extension
+            // (Swagger UI can't render a digest Authorize dialog, so modules declare http/basic +
+            // x-auth-mode: digest to capture credentials while the GUI performs digest on the wire).
+            function getActiveSecuritySchemes() {
+                var ui = window.ui;
+                if (!ui || !ui.specSelectors) return null;
+                try {
+                    var defs = ui.specSelectors.securityDefinitions && ui.specSelectors.securityDefinitions();
+                    if (defs && defs.size) return defs;
+                } catch (e) { /* fall through */ }
+                try {
+                    var json = ui.specSelectors.specJson && ui.specSelectors.specJson();
+                    if (json) return json.getIn(['components', 'securitySchemes']) || json.get('securityDefinitions');
+                } catch (e) { /* ignore */ }
+                return null;
             }
 
-            function isDigestUrl(url) {
-                if (!digest_paths || digest_paths.length === 0) return false;
-                var p = toPathname(url);
-                return digest_paths.some(function (prefix) { return prefix && p.indexOf(prefix) === 0; });
+            function activeSpecRequiresDigest() {
+                var defs = getActiveSecuritySchemes();
+                if (!defs || !defs.forEach) return false;
+                var digest = false;
+                defs.forEach(function (scheme) {
+                    if (!scheme || !scheme.get) return;
+                    if (scheme.get('scheme') === 'digest' || scheme.get('x-auth-mode') === 'digest') digest = true;
+                });
+                return digest;
             }
 
             function parseDigestChallenge(headerValue) {
@@ -185,10 +203,11 @@
                 return req;
             }
 
-            // Single, context-root-aware interceptor: digest for the configured modules,
-            // and untouched (so Swagger UI's native OIDC bearer survives) for everything else.
+            // Single, spec-driven interceptor: when the selected module's OpenAPI document declares a
+            // digest scheme, perform the digest challenge/response; otherwise leave the request as-is
+            // (so Swagger UI's native bearer/OAuth2 auth on other modules survives untouched).
             async function perModuleRequestInterceptor(req) {
-                if (isDigestUrl(req.url)) {
+                if (activeSpecRequiresDigest()) {
                     try { return await applyDigestAuth(req); } catch (e) { return req; }
                 }
                 return req;
