@@ -67,7 +67,7 @@ Use the dropdown (top-right) to switch modules.
 
 **Module B (Digest)**
 1. Select *Module B (Digest)*.
-2. Click **Authorize**, enter **`digestuser`** / **`digestpass`** (a Basic-style dialog — Swagger UI
+2. Click **Authorize**, enter **`bob`** / **`bob`** (a Basic-style dialog — Swagger UI
    has no digest dialog), click **Authorize**, close.
 3. Expand `GET /time` → **Try it out** → **Execute**. The interceptor reads those credentials,
    performs the digest challenge/response, and sends `Authorization: Digest …`; the response shows

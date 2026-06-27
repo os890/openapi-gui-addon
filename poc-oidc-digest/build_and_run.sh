@@ -34,7 +34,7 @@ Stack starting (give WildFly + Keycloak ~30-60s).
 In the Swagger UI dropdown (top right), switch between the two modules:
 
   Module A (OIDC)   -> click "Authorize" -> log in as  alice / alice
-  Module B (Digest) -> "Try it out" -> prompted for     digestuser / digestpass
+  Module B (Digest) -> "Try it out" -> prompted for     bob / bob
 
 Logs : podman compose -f compose.yml logs -f
 Stop : podman compose -f compose.yml down
