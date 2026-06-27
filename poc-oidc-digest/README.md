@@ -63,17 +63,19 @@ Use the dropdown (top-right) to switch modules.
    and click **Authorize** again. No popup or redirect — Swagger UI POSTs the password grant to
    Keycloak and stores the bearer token. Close the dialog.
 3. Expand `GET /profile` → **Try it out** → **Execute**. The request carries the bearer token;
-   the response shows the authenticated user.
+   the response greets you by name: `"greeting": "Hello alice, welcome to module-a!"`.
 
 **Module B (Digest)**
 1. Select *Module B (Digest)*.
 2. Click **Authorize**, enter **`bob`** / **`bob`** (a Basic-style dialog — Swagger UI
    has no digest dialog), click **Authorize**, close.
 3. Expand `GET /time` → **Try it out** → **Execute**. The interceptor reads those credentials,
-   performs the digest challenge/response, and sends `Authorization: Digest …`; the response shows
-   the authenticated user. (If you skip step 2, the interceptor instead prompts on first Execute.)
+   performs the digest challenge/response, and sends `Authorization: Digest …`; the response greets
+   you: `"greeting": "Hello bob, welcome to module-b!"`. (If you skip step 2, the interceptor
+   instead prompts on first Execute.)
 
-Switching back and forth shows each module using **its own** scheme.
+Switching back and forth shows each module using **its own** scheme — and each greets its own
+authenticated user (`alice` vs `bob`), so a correct end-to-end run is obvious from the response.
 
 ## How the Keycloak hostname is handled
 
