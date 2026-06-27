@@ -138,7 +138,12 @@
             async function ensureDigestChallenge(probeUrl, method) {
                 if (digestState.challenge) return digestState.challenge;
                 // Pre-flight to obtain the WWW-Authenticate: Digest challenge (realm/nonce/qop/opaque).
-                var probe = await fetch(probeUrl, { method: method, headers: { 'X-Swagger-Digest-Probe': '1' } });
+                // A script-set Authorization header suppresses the browser's native credential popup
+                // on the 401 (the browser assumes the app handles auth) while we still read the header.
+                var probe = await fetch(probeUrl, {
+                    method: method,
+                    headers: { 'X-Swagger-Digest-Probe': '1', 'Authorization': 'Digest probe' }
+                });
                 if (probe.status !== 401) return null;
                 var wa = probe.headers.get('WWW-Authenticate');
                 if (!wa || wa.toLowerCase().indexOf('digest') < 0) return null;
