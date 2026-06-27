@@ -12,24 +12,36 @@ import jakarta.ws.rs.core.Application;
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
 import org.eclipse.microprofile.openapi.annotations.info.Info;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
+import org.eclipse.microprofile.openapi.annotations.security.OAuthFlow;
+import org.eclipse.microprofile.openapi.annotations.security.OAuthFlows;
+import org.eclipse.microprofile.openapi.annotations.security.OAuthScope;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 
 /**
  * Module A is an OIDC-protected resource server.
  *
- * The OpenAPI document declares an {@code openIdConnect} security scheme so the shared
- * Swagger UI renders the native "Authorize" dialog and runs the authorization-code + PKCE
- * flow against Keycloak. The resulting bearer token is sent to {@code /module-a/api/*},
- * which WildFly's elytron-oidc-client validates (bearer-only, see WEB-INF/oidc.json).
+ * The scheme is declared as {@code oauth2} with an explicit {@code authorizationCode} flow
+ * (rather than {@code openIdConnect}) so the Swagger UI "Authorize" dialog lists ONLY the
+ * scope we actually need ({@code openid}) instead of every scope advertised by Keycloak's
+ * discovery document. The flow runs authorization-code + PKCE against Keycloak (public client
+ * "swagger-ui", preset via openapi.ui.oauth2ClientId) — no client secret is used; leave that
+ * field blank. The resulting bearer token is validated by WildFly's elytron-oidc-client
+ * (bearer-only, see WEB-INF/oidc.json).
  *
- * openIdConnectUrl points at the browser-reachable Keycloak issuer (localhost:8081).
+ * The authorization/token URLs point at the browser-reachable Keycloak (localhost:8081).
  */
 @ApplicationPath("/api")
 @OpenAPIDefinition(info = @Info(title = "Module A (OIDC)", version = "1.0.0"))
 @SecurityScheme(
         securitySchemeName = "oidc",
-        type = SecuritySchemeType.OPENIDCONNECT,
-        openIdConnectUrl = "http://localhost:8081/realms/poc/.well-known/openid-configuration"
+        type = SecuritySchemeType.OAUTH2,
+        flows = @OAuthFlows(
+                authorizationCode = @OAuthFlow(
+                        authorizationUrl = "http://localhost:8081/realms/poc/protocol/openid-connect/auth",
+                        tokenUrl = "http://localhost:8081/realms/poc/protocol/openid-connect/token",
+                        scopes = @OAuthScope(name = "openid", description = "OpenID Connect authentication")
+                )
+        )
 )
 public class ModuleAApplication extends Application {
 }
