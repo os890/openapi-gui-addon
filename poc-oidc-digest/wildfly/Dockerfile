@@ -10,8 +10,8 @@ COPY poc-users.properties poc-groups.properties /opt/jboss/wildfly/standalone/co
 COPY configure.cli /opt/jboss/configure.cli
 RUN /opt/jboss/wildfly/bin/jboss-cli.sh --file=/opt/jboss/configure.cli
 
-# Deploy the three WARs (built by build_and_run.sh into ./deployments).
-COPY deployments/gui.war      /opt/jboss/wildfly/standalone/deployments/
+# Deploy the two module WARs (built by build_and_run.sh into ./deployments).
+# Each WAR ships the addon and serves its own shared Swagger UI.
 COPY deployments/module-a.war /opt/jboss/wildfly/standalone/deployments/
 COPY deployments/module-b.war /opt/jboss/wildfly/standalone/deployments/
 

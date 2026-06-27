@@ -9,13 +9,14 @@
         <auth-method>OIDC</auth-method>
     </login-config>
 
-    <!-- Protect only the REST API. The OpenAPI document (/module-a/openapi) is served by the
-         SmallRye extension outside this constraint, so the shared Swagger UI can load the spec
-         without a token. -->
+    <!-- Protect only the REST resource (/module-a/profile). The Swagger UI (/module-a/openapi-ui),
+         its webjars, and the OpenAPI document (/module-a/openapi) stay open so the bundled UI loads
+         and can fetch the spec without a token. -->
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>module-a-api</web-resource-name>
-            <url-pattern>/api/*</url-pattern>
+            <url-pattern>/profile</url-pattern>
+            <url-pattern>/profile/*</url-pattern>
         </web-resource-collection>
         <auth-constraint>
             <!-- ** = any authenticated user -->

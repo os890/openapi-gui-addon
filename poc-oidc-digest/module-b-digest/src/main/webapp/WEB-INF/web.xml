@@ -11,11 +11,13 @@
         <realm-name>poc-digest</realm-name>
     </login-config>
 
-    <!-- Protect only the REST API; the OpenAPI document (/module-b/openapi) stays open. -->
+    <!-- Protect only the REST resource (/module-b/time). The Swagger UI (/module-b/openapi-ui),
+         its webjars, and the OpenAPI document (/module-b/openapi) stay open. -->
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>module-b-api</web-resource-name>
-            <url-pattern>/api/*</url-pattern>
+            <url-pattern>/time</url-pattern>
+            <url-pattern>/time/*</url-pattern>
         </web-resource-collection>
         <auth-constraint>
             <role-name>user</role-name>

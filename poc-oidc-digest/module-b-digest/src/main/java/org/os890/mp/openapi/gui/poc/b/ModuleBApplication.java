@@ -20,7 +20,9 @@ import org.eclipse.microprofile.openapi.annotations.info.Info;
  * detects that marker in this document and performs the digest challenge/response. Nothing about the
  * scheme is declared by annotation here, and the GUI needs no per-module configuration.
  */
-@ApplicationPath("/api")
+// ApplicationPath "/" so the bundled Swagger UI mounts at /module-b/openapi-ui (outside the
+// secured REST path). web.xml protects only /time, leaving the UI/webjars/openapi doc open.
+@ApplicationPath("/")
 @OpenAPIDefinition(info = @Info(title = "Module B (Digest)", version = "1.0.0"))
 public class ModuleBApplication extends Application {
 }

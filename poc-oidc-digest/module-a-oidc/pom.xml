@@ -19,6 +19,13 @@
     </build>
 
     <dependencies>
+        <!-- The OpenAPI GUI addon: each module ships its own shared Swagger UI. -->
+        <dependency>
+            <groupId>org.os890.mp-ext</groupId>
+            <artifactId>openapi-gui-addon</artifactId>
+            <version>${openapi.gui.addon.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-web-api</artifactId>

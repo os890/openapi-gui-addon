@@ -15,8 +15,7 @@ mvn -q -f "$HERE/pom.xml" clean package
 
 echo "==> [3/4] Stage WARs for the WildFly image"
 mkdir -p "$HERE/wildfly/deployments"
-cp "$HERE/gui/target/gui.war"               "$HERE/wildfly/deployments/"
-cp "$HERE/module-a-oidc/target/module-a.war" "$HERE/wildfly/deployments/"
+cp "$HERE/module-a-oidc/target/module-a.war"   "$HERE/wildfly/deployments/"
 cp "$HERE/module-b-digest/target/module-b.war" "$HERE/wildfly/deployments/"
 
 echo "==> [4/4] Build images & start the stack (podman compose)"
@@ -28,8 +27,11 @@ cat <<'EOF'
 ----------------------------------------------------------------------
 Stack starting (give WildFly + Keycloak ~30-60s).
 
-  Shared Swagger UI : http://localhost:8090/gui/openapi-ui/
-  Keycloak admin    : http://localhost:8081   (admin / admin)
+Each module ships its own shared Swagger UI (open either — the dropdown lists both):
+
+  Module A UI : http://localhost:8090/module-a/openapi-ui/
+  Module B UI : http://localhost:8090/module-b/openapi-ui/
+  Keycloak    : http://localhost:8081   (admin / admin)
 
 In the Swagger UI dropdown (top right), switch between the two modules:
 

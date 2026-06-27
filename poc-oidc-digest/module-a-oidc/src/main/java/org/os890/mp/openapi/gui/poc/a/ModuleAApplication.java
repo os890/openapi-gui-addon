@@ -21,7 +21,9 @@ import org.eclipse.microprofile.openapi.annotations.info.Info;
  * comes from config and the requirement applies document-wide. The shared GUI reacts purely to
  * what the resulting OpenAPI document declares.
  */
-@ApplicationPath("/api")
+// ApplicationPath "/" so the bundled Swagger UI mounts at /module-a/openapi-ui (outside the
+// secured REST path). web.xml protects only /profile, leaving the UI/webjars/openapi doc open.
+@ApplicationPath("/")
 @OpenAPIDefinition(info = @Info(title = "Module A (OIDC)", version = "1.0.0"))
 public class ModuleAApplication extends Application {
 }
