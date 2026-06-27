@@ -80,6 +80,25 @@
             var digest_paths = %digestPathsData%;
             // Optional OIDC/OAuth2 client preset for the native Swagger UI "Authorize" dialog.
             var oauth2ClientId = "%oauth2ClientId%";
+            // Hide the unused client_secret field for public clients (openapi.ui.oauth2HideClientSecret).
+            var hideClientSecret = %hideClientSecret%;
+
+            // Swagger UI always renders a client_secret input for auth-code flows. For a public
+            // client + PKCE it is unused, so hide its row by label text (markup-version-agnostic).
+            function installClientSecretHider() {
+                if (!hideClientSecret) return;
+                var hide = function () {
+                    var labels = document.querySelectorAll('.auth-container label');
+                    for (var i = 0; i < labels.length; i++) {
+                        var t = (labels[i].textContent || '').trim().toLowerCase();
+                        if (t.indexOf('client_secret') === 0 || t.indexOf('client secret') === 0) {
+                            labels[i].style.display = 'none';
+                        }
+                    }
+                };
+                new MutationObserver(hide).observe(document.body, { childList: true, subtree: true });
+                hide();
+            }
 
             function buildUi(cfg) {
                 var ui = SwaggerUIBundle(cfg);
@@ -90,6 +109,7 @@
                         usePkceWithAuthorizationCodeGrant: true
                     });
                 }
+                installClientSecretHider();
                 return ui;
             }
             // Cached digest challenge + credentials (per Swagger UI session). Single protection space for the PoC.

@@ -77,6 +77,7 @@ public class Templates {
         html = html.replaceAll(VAR_OAUTH2_REDIRECT_URI, oauth2RedirectUri);
         html = html.replaceAll(VAR_OAUTH2_CLIENT_ID, oauth2ClientId.orElse(""));
         html = html.replaceAll(VAR_AUTH_DIALOG_STYLE, getAuthDialogStyle());
+        html = html.replaceAll(VAR_HIDE_CLIENT_SECRET, String.valueOf(oauth2HideClientSecret));
 
         try {
             Iterable<String> propertyNames = config.getPropertyNames();
@@ -284,6 +285,7 @@ public class Templates {
     private static final String VAR_OAUTH2_REDIRECT_URI = "%oauth2RedirectUri%";
     private static final String VAR_OAUTH2_CLIENT_ID = "%oauth2ClientId%";
     private static final String VAR_AUTH_DIALOG_STYLE = "%authDialogStyle%";
+    private static final String VAR_HIDE_CLIENT_SECRET = "%hideClientSecret%";
     private static final String PERSENTAGE = "%";
     private static final String NL = "\n";
     private static final String EMPTY = "";
