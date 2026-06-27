@@ -24,7 +24,7 @@ services:
   wildfly:
     build: ./wildfly
     ports:
-      - "8080:8080"
+      - "8090:8080"
       - "9990:9990"
     depends_on:
       - keycloak

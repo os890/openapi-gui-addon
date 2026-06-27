@@ -28,7 +28,7 @@ cat <<'EOF'
 ----------------------------------------------------------------------
 Stack starting (give WildFly + Keycloak ~30-60s).
 
-  Shared Swagger UI : http://localhost:8080/gui/openapi-ui
+  Shared Swagger UI : http://localhost:8090/gui/openapi-ui/
   Keycloak admin    : http://localhost:8081   (admin / admin)
 
 In the Swagger UI dropdown (top right), switch between the two modules:

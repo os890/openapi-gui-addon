@@ -46,7 +46,7 @@ and starts WildFly + Keycloak via `compose.yml`.
 
 Then open the **shared Swagger UI**:
 
-> http://localhost:8080/gui/openapi-ui
+> http://localhost:8090/gui/openapi-ui/
 
 ## Try it
 
