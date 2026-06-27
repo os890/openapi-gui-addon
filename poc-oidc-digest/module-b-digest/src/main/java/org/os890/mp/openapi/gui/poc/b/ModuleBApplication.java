@@ -17,17 +17,21 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 /**
  * Module B is protected by HTTP Digest (WildFly Elytron digest mechanism, realm "poc-digest").
  *
- * The OpenAPI document declares an {@code http} / {@code digest} security scheme for
- * documentation. Swagger UI has no native digest flow, so the shared GUI's addon supplies a
- * context-root-aware requestInterceptor (enabled via openapi.ui.digestPaths=/module-b) that
- * performs the digest challenge/response only for /module-b/** requests.
+ * Swagger UI has no native HTTP Digest support — its Authorize dialog rejects scheme "digest"
+ * ("unsupported scheme"). So the scheme is declared as {@code http} / {@code basic}: that gives a
+ * working username/password Authorize dialog. The shared GUI's addon interceptor (enabled via
+ * openapi.ui.digestPaths=/module-b) then reads those captured credentials and performs the real
+ * HTTP Digest challenge/response on the wire for /module-b/** requests. (If the user skips the
+ * dialog, the interceptor falls back to prompting on first "Try it out".)
  */
 @ApplicationPath("/api")
 @OpenAPIDefinition(info = @Info(title = "Module B (Digest)", version = "1.0.0"))
 @SecurityScheme(
         securitySchemeName = "digest",
         type = SecuritySchemeType.HTTP,
-        scheme = "digest"
+        scheme = "basic",
+        description = "Enter your HTTP Digest credentials here. Swagger UI captures them via a Basic "
+                + "dialog; the shared GUI performs the actual HTTP Digest challenge/response on the wire."
 )
 public class ModuleBApplication extends Application {
 }

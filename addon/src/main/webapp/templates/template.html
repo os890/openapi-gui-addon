@@ -147,11 +147,26 @@
             }
 
             async function applyDigestAuth(req) {
+                // Credential source #1: a Basic header that Swagger UI's "Authorize" dialog attached
+                // for this module (the module declares an http/basic scheme purely to capture the
+                // username/password). Decode it so we can recompute it as a Digest response. Re-read
+                // every time so re-authorizing with new credentials takes effect.
+                var basic = req.headers && (req.headers['Authorization'] || req.headers['authorization']);
+                if (basic && /^Basic\s+/i.test(basic)) {
+                    try {
+                        var decoded = atob(basic.replace(/^Basic\s+/i, ''));
+                        var sep = decoded.indexOf(':');
+                        digestState.username = sep >= 0 ? decoded.substring(0, sep) : decoded;
+                        digestState.password = sep >= 0 ? decoded.substring(sep + 1) : '';
+                    } catch (e) { /* fall through to prompt */ }
+                }
+
                 // Probe first: an unprotected path under the same prefix (e.g. the open /module-b/openapi
                 // document) is not challenged, so we must not prompt for credentials in that case.
                 var c = await ensureDigestChallenge(req.url, req.method);
                 if (!c || !c.realm || !c.nonce) return req;
 
+                // Credential source #2 (fallback): prompt, if the user did not use the Authorize dialog.
                 if (!digestState.username) {
                     var u = window.prompt('HTTP Digest authentication (' + c.realm + ')\nUsername:');
                     if (u === null) return req;

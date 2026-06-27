@@ -67,9 +67,11 @@ Use the dropdown (top-right) to switch modules.
 
 **Module B (Digest)**
 1. Select *Module B (Digest)*.
-2. Expand `GET /time` → **Try it out** → **Execute**.
-3. On the first call you're prompted for digest credentials → **`digestuser` / `digestpass`**.
-   The interceptor computes the `Authorization: Digest …` header; the response shows the user.
+2. Click **Authorize**, enter **`digestuser`** / **`digestpass`** (a Basic-style dialog — Swagger UI
+   has no digest dialog), click **Authorize**, close.
+3. Expand `GET /time` → **Try it out** → **Execute**. The interceptor reads those credentials,
+   performs the digest challenge/response, and sends `Authorization: Digest …`; the response shows
+   the authenticated user. (If you skip step 2, the interceptor instead prompts on first Execute.)
 
 Switching back and forth shows each module using **its own** scheme.
 
