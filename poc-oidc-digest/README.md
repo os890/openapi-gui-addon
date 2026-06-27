@@ -9,7 +9,7 @@ The new part: the two modules use **different** authentication schemes, and the 
 
 | Module | Context root | OpenAPI endpoint | Secured by | How Swagger UI authenticates |
 |--------|--------------|------------------|------------|------------------------------|
-| Module A | `/module-a` | `/module-a/openapi` | **OIDC** (Keycloak) | native Swagger UI "Authorize" → auth-code + PKCE → bearer token |
+| Module A | `/module-a` | `/module-a/openapi` | **OIDC** (Keycloak) | Swagger UI "Authorize" → OAuth2 password grant (inline user/pass) → bearer token |
 | Module B | `/module-b` | `/module-b/openapi` | **HTTP Digest** | addon's context-root-aware `requestInterceptor` does the digest challenge/response |
 | GUI | `/gui` | — | none | hosts the one shared Swagger UI |
 
@@ -19,8 +19,12 @@ In multi-spec (`urls`) mode, Swagger UI loads **one spec at a time** and rebuild
 "Authorize" dialog from *that* spec's `securitySchemes`. So per-module auth is already the
 default — **as long as each module's OpenAPI document declares its own scheme**:
 
-- **Module A** declares `openIdConnect` (`ModuleAApplication`), so the native Authorize button
-  runs the OIDC flow. `openapi.ui.oauth2ClientId=swagger-ui` presets the dialog (public client + PKCE).
+- **Module A** declares an `oauth2` **password**-grant scheme (`ModuleAApplication`). Swagger UI's
+  Authorize dialog collects username + password + client_id inline and POSTs `grant_type=password`
+  straight to Keycloak's token endpoint — **no popup, no redirect**. This deliberately avoids the
+  authorization-code popup flow, which breaks against Keycloak 24+ (`Cross-Origin-Opener-Policy:
+  same-origin` severs `window.opener`). `openapi.ui.oauth2ClientId=swagger-ui` presets the client id
+  and `openapi.ui.oauth2HideClientSecret=true` hides the unused secret field (public client).
 - **Module B** declares `http`/`digest` (`ModuleBApplication`). Swagger UI has **no** native
   digest flow, so the addon adds one: a **single, context-root-aware `requestInterceptor`**
   (config `openapi.ui.digestPaths=/module-b`). It runs the digest challenge/response **only**
@@ -54,7 +58,10 @@ Use the dropdown (top-right) to switch modules.
 
 **Module A (OIDC)**
 1. Select *Module A (OIDC)*.
-2. Click **Authorize** → you're redirected to Keycloak → log in as **`alice` / `alice`**.
+2. Click **Authorize**. In the dialog enter username **`alice`**, password **`alice`**
+   (client_id is pre-filled as `swagger-ui`; the secret field is hidden), tick **`openid`**,
+   and click **Authorize** again. No popup or redirect — Swagger UI POSTs the password grant to
+   Keycloak and stores the bearer token. Close the dialog.
 3. Expand `GET /profile` → **Try it out** → **Execute**. The request carries the bearer token;
    the response shows the authenticated user.
 
