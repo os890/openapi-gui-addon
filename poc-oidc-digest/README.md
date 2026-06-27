@@ -74,10 +74,13 @@ Use the dropdown (top-right) to switch modules.
 1. Select *Module B (Digest)*.
 2. Click **Authorize**, enter **`bob`** / **`bob`** (a Basic-style dialog — Swagger UI
    has no digest dialog), click **Authorize**, close.
-3. Expand `GET /time` → **Try it out** → **Execute**. The interceptor reads those credentials,
-   performs the digest challenge/response, and sends `Authorization: Digest …`; the response greets
-   you: `"greeting": "Hello bob, welcome to module-b!"`. (If you skip step 2, the interceptor
-   instead prompts on first Execute.)
+3. Expand `GET /time` → **Try it out** → **Execute**. The interceptor reads the credentials Swagger
+   UI captured, performs the digest challenge/response, and sends `Authorization: Digest …`; the
+   response greets you: `"greeting": "Hello bob, welcome to module-b!"`.
+
+Credentials come solely from the Authorize dialog, so **Logout** genuinely de-authenticates: after
+Logout, Execute returns `401` and you must Authorize again — digest follows the same authorize/logout
+lifecycle as the bearer scheme.
 
 Switching back and forth shows each module using **its own** scheme — and each greets its own
 authenticated user (`alice` vs `bob`), so a correct end-to-end run is obvious from the response.
