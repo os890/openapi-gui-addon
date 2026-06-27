@@ -76,8 +76,6 @@ public class Templates {
         html = html.replaceAll(VAR_CURRENT_YEAR, getCopyrightYear());
         html = html.replaceAll(VAR_OAUTH2_REDIRECT_URI, oauth2RedirectUri);
         html = html.replaceAll(VAR_OAUTH2_CLIENT_ID, oauth2ClientId.orElse(""));
-        html = html.replaceAll(VAR_AUTH_DIALOG_STYLE, getAuthDialogStyle());
-        html = html.replaceAll(VAR_HIDE_CLIENT_SECRET, String.valueOf(oauth2HideClientSecret));
 
         try {
             Iterable<String> propertyNames = config.getPropertyNames();
@@ -120,16 +118,6 @@ public class Templates {
             return sb.toString();
         }
         return "[]";
-    }
-
-    // When openapi.ui.oauth2HideClientSecret=true, hide the client_secret input in the Swagger UI
-    // Authorize dialog (it is rendered unconditionally for auth-code flows but is unused for a
-    // public client + PKCE). Targets the password-typed credential field only.
-    private String getAuthDialogStyle() {
-        if (oauth2HideClientSecret) {
-            return ".swagger-ui .auth-container label:has(input[type=\"password\"]) { display: none !important; }";
-        }
-        return "";
     }
 
     private String getUrlsData() {
@@ -249,7 +237,7 @@ public class Templates {
     }
 
     private static final String X_REQUEST_URI = "x-request-uri";
-    private static final List<String> KNOWN_PROPERTIES = Arrays.asList("openapi.ui.serverVisibility","openapi.ui.exploreFormVisibility","openapi.ui.swaggerHeaderVisibility","openapi.ui.copyrightBy","openapi.ui.copyrightYear","openapi.ui.title","openapi.ui.contextRoot","openapi.ui.yamlUrl","openapi.ui.swaggerUiTheme","openapi.ui.urls","openapi.ui.digestPaths","openapi.ui.oauth2RedirectUri","openapi.ui.oauth2ClientId","openapi.ui.oauth2HideClientSecret");
+    private static final List<String> KNOWN_PROPERTIES = Arrays.asList("openapi.ui.serverVisibility","openapi.ui.exploreFormVisibility","openapi.ui.swaggerHeaderVisibility","openapi.ui.copyrightBy","openapi.ui.copyrightYear","openapi.ui.title","openapi.ui.contextRoot","openapi.ui.yamlUrl","openapi.ui.swaggerUiTheme","openapi.ui.urls","openapi.ui.digestPaths","openapi.ui.oauth2RedirectUri","openapi.ui.oauth2ClientId");
 
     @Inject @ConfigProperty(name = "openapi.ui.copyrightBy") private Optional<String> copyrightBy;
     @Inject @ConfigProperty(name = "openapi.ui.copyrightYear") private Optional<String> copyrightYear;
@@ -264,7 +252,6 @@ public class Templates {
     @Inject @ConfigProperty(name = "openapi.ui.modelsVisibility", defaultValue = "visible") private String modelsVisibility;
     @Inject @ConfigProperty(name = "openapi.ui.oauth2RedirectUri", defaultValue = "/oauth2-redirect.html") private String oauth2RedirectUri;
     @Inject @ConfigProperty(name = "openapi.ui.oauth2ClientId") private Optional<String> oauth2ClientId;
-    @Inject @ConfigProperty(name = "openapi.ui.oauth2HideClientSecret", defaultValue = "false") private boolean oauth2HideClientSecret;
     @Inject @ConfigProperty(name = "openapi.ui.urls") private Optional<String> urls;
     @Inject @ConfigProperty(name = "openapi.ui.digestPaths") private Optional<String> digestPaths;
     @Inject private Config config;
@@ -284,8 +271,6 @@ public class Templates {
     private static final String VAR_CREATED_WITH_VISIBILITY = "%createdWithVisibility%";
     private static final String VAR_OAUTH2_REDIRECT_URI = "%oauth2RedirectUri%";
     private static final String VAR_OAUTH2_CLIENT_ID = "%oauth2ClientId%";
-    private static final String VAR_AUTH_DIALOG_STYLE = "%authDialogStyle%";
-    private static final String VAR_HIDE_CLIENT_SECRET = "%hideClientSecret%";
     private static final String PERSENTAGE = "%";
     private static final String NL = "\n";
     private static final String EMPTY = "";

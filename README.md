@@ -66,7 +66,6 @@ openapi.ui.modelsVisibility=visible
 # Optional: OAuth2/OIDC + per-module auth (see "Per-module authentication" below)
 openapi.ui.oauth2RedirectUri=/my-app/webjars/swagger-ui/5.18.2/oauth2-redirect.html
 openapi.ui.oauth2ClientId=swagger-ui
-openapi.ui.oauth2HideClientSecret=true
 openapi.ui.digestPaths=/module-b,/another-digest-module
 ```
 
@@ -78,8 +77,6 @@ through the one shared UI. These addon properties support that (all optional; un
 
 - `openapi.ui.oauth2ClientId` — pre-fills the client id in the OAuth2/OIDC Authorize dialog and
   enables PKCE (`ui.initOAuth`).
-- `openapi.ui.oauth2HideClientSecret` — hides the unused `client_secret` field in the Authorize
-  dialog (public client + PKCE, or password grant with a public client). Default `false`.
 - `openapi.ui.oauth2RedirectUri` — Swagger UI OAuth2 redirect landing page. Default
   `/oauth2-redirect.html`; for an app under a context root point it at the served webjar copy.
 - `openapi.ui.digestPaths` — comma-separated path prefixes whose modules use **HTTP Digest**.

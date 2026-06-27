@@ -27,8 +27,8 @@ import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
  * popup, no redirect. This deliberately avoids the authorization-code popup flow, which breaks
  * against Keycloak 24+ (its {@code Cross-Origin-Opener-Policy: same-origin} header severs
  * {@code window.opener}, so Swagger UI's oauth2-redirect handler throws). The public client
- * "swagger-ui" needs no secret (that field is hidden via openapi.ui.oauth2HideClientSecret);
- * only the {@code openid} scope is requested.
+ * "swagger-ui" needs no secret (leave the client_secret field blank); only the {@code openid}
+ * scope is requested.
  *
  * tokenUrl points at the browser-reachable Keycloak (localhost:8081).
  */

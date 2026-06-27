@@ -24,7 +24,7 @@ default — **as long as each module's OpenAPI document declares its own scheme*
   straight to Keycloak's token endpoint — **no popup, no redirect**. This deliberately avoids the
   authorization-code popup flow, which breaks against Keycloak 24+ (`Cross-Origin-Opener-Policy:
   same-origin` severs `window.opener`). `openapi.ui.oauth2ClientId=swagger-ui` presets the client id
-  and `openapi.ui.oauth2HideClientSecret=true` hides the unused secret field (public client).
+  (public client — leave the client_secret field blank).
 - **Module B** declares `http`/`digest` (`ModuleBApplication`). Swagger UI has **no** native
   digest flow, so the addon adds one: a **single, context-root-aware `requestInterceptor`**
   (config `openapi.ui.digestPaths=/module-b`). It runs the digest challenge/response **only**
@@ -59,7 +59,7 @@ Use the dropdown (top-right) to switch modules.
 **Module A (OIDC)**
 1. Select *Module A (OIDC)*.
 2. Click **Authorize**. In the dialog enter username **`alice`**, password **`alice`**
-   (client_id is pre-filled as `swagger-ui`; the secret field is hidden), tick **`openid`**,
+   (client_id is pre-filled as `swagger-ui`; leave client_secret blank), tick **`openid`**,
    and click **Authorize** again. No popup or redirect — Swagger UI POSTs the password grant to
    Keycloak and stores the bearer token. Close the dialog.
 3. Expand `GET /profile` → **Try it out** → **Execute**. The request carries the bearer token;
