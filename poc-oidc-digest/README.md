@@ -37,6 +37,26 @@ annotations, and REST resources stay pure Jakarta):
 Both addon pieces are generic and inert unless a spec opts in. See
 `addon/src/main/webapp/templates/template.html` and `Templates.java`.
 
+### What the addon adds for mixed mode
+
+Everything required for per-module OIDC + Digest lives in
+[`addon/src/main/webapp/templates/template.html`](../addon/src/main/webapp/templates/template.html)
+— these are the only additions over the base addon (the rest of the template, e.g. the multi-API
+dropdown, is unchanged):
+
+| Addition (in `template.html`) | Purpose |
+|---|---|
+| `var md5 = …` (self-contained MD5, no external request) | compute the HTTP Digest response hash in the browser |
+| `getActiveSecuritySchemes()` + `activeSpecRequiresDigest()` | spec-driven detection — inspect the *currently selected* spec's security schemes for `scheme: digest` or `x-auth-mode: digest` |
+| `parseDigestChallenge()` | parse the `WWW-Authenticate: Digest …` challenge (realm/nonce/qop/opaque) |
+| `ensureDigestChallenge()` | pre-flight fetch to obtain the challenge; sends a dummy `Authorization` so the browser doesn't pop its native dialog |
+| `applyDigestAuth()` | read the credentials from Swagger UI's Authorize store (the `Basic` header) and emit `Authorization: Digest …`; no Basic header ⇒ unauthenticated (so Logout works) |
+| `perModuleRequestInterceptor()` + `requestInterceptor:` wiring | single interceptor: digest when the active spec requires it, otherwise leave the request untouched (native bearer/OAuth2 survives) |
+| `var oauth2ClientId` + `buildUi()` → `ui.initOAuth(...)` | preset the OIDC Authorize dialog (client id + PKCE) from `openapi.ui.oauth2ClientId` |
+
+The matching `Templates.java` change is just the `%oauth2ClientId%` config plumbing — the digest
+side needs no new config because detection is spec-driven.
+
 ## Requirements
 
 - `podman` (with a started machine) + `podman compose`
